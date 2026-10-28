@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="pt-BR" class="is-loading">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upclass — iPhones e acessórios com procedência</title>
+  <meta name="description" content="Upclass: iPhones e acessórios com procedência garantida, entrega precisa e atendimento que valoriza cada detalhe — da venda ao pós-venda." />
+  <meta name="theme-color" content="#000229" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preload" href="/fonts/ibrand-regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/gotham-book.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/img/bolt-tex-1600.webp" as="image" type="image/webp" />
+  <link rel="preload" href="/img/bolt-normal-1600.webp" as="image" type="image/webp" />
+  <script>
+    // Decide before first paint whether the intro will run, so the hero never flashes.
+    (function () {
+      var d = document.documentElement;
+      var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var seen = false;
+      try { seen = sessionStorage.getItem('upc-intro') === '1'; } catch (e) {}
+      d.classList.add(reduce ? 'reduce-motion' : 'motion');
+      if (!reduce && !seen) d.classList.add('has-intro');
+      // safety net: if the script bundle never boots, show the page as plain static content
+      setTimeout(function () {
+        if (!window.__upcReady) d.classList.remove('motion', 'has-intro');
+      }, 4000);
+    })();
+  </script>
+  <link rel="stylesheet" href="/src/css/main.css" />
+  <link rel="stylesheet" href="/src/css/sections.css" />
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+  <!-- Intro: the 3D mark assembles while the page loads, then the camera dives through the upper bolt -->
+  <div class="intro" aria-hidden="true">
+    <svg class="intro__svg" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <mask id="intro-mask" maskUnits="userSpaceOnUse">
+          <rect class="intro__mask-bg" fill="#fff" />
+          <g class="intro__hole"></g>
+        </mask>
+        <linearGradient id="g-intro-edge" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#80FFFF" /><stop offset=".5" stop-color="#ffffff" /><stop offset="1" stop-color="#FC39CE" />
+        </linearGradient>
+      </defs>
+      <rect class="intro__veil" mask="url(#intro-mask)" />
+      <g class="intro__mark"></g>
+    </svg>
+    <div class="intro__glow"></div>
+    <canvas class="intro__3d"></canvas>
+    <!-- the name, revealed by the same glint that runs across the mark -->
+    <p class="intro__word">
+      <span class="intro__word-base">upclass</span>
+      <span class="intro__word-shine">upclass</span>
+    </p>
+  </div>
+
+  <header class="nav" data-theme="dark">
+    <div class="nav__capsule">
+      <button class="nav__menu" type="button" aria-expanded="false" aria-controls="menu">
+        <span class="nav__menu-icon" aria-hidden="true"><i></i><i></i></span>
+        <span class="nav__menu-label">Menu</span>
+      </button>
+      <a class="nav__logo" href="#topo" aria-label="Upclass — início">
+        <img class="nav__bolt" src="/img/bolt-art-700.webp" alt="" width="409" height="701" />
+        <span class="nav__word">upclass</span>
+      </a>
+      <a class="nav__cta" href="#contato">
+        <span>Fale conosco</span>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+      </a>
+    </div>
+  </header>
+
+  <nav class="menu" id="menu" aria-label="Menu principal" hidden>
+    <ol class="menu__list">
+      <li><a href="#topo">Início</a></li>
+      <li><a href="#manifesto">Manifesto</a></li>
+      <li><a href="#filme">Filme</a></li>
+      <li><a href="#simbolo">Símbolo</a></li>
+      <li><a href="#colecao">Coleção</a></li>
+      <li><a href="#diferenciais">Diferenciais</a></li>
+      <li><a href="#rodape">Contato</a></li>
+    </ol>
+    <p class="menu__foot caps">Nada menos do que você espera.</p>
+  </nav>
+
+  <main id="conteudo">
+    <section class="hero" id="topo" aria-labelledby="hero-title">
+      <div class="hero__stage">
+        <div class="hero__bg" aria-hidden="true">
+          <picture>
+            <source type="image/avif" srcset="/img/bg-glow-900.avif 900w, /img/bg-glow-1600.avif 1600w, /img/bg-glow-2560.avif 2560w" sizes="110vw" />
+            <img src="/img/bg-glow-1600.webp" srcset="/img/bg-glow-900.webp 900w, /img/bg-glow-1600.webp 1600w, /img/bg-glow-2560.webp 2560w" sizes="110vw" alt="" fetchpriority="high" decoding="async" />
+          </picture>
+        </div>
+
+        <!-- giant wordmark behind the bolt; a second, lit copy is revealed around the cursor -->
+        <div class="hero__word" aria-hidden="true">
+          <span class="hero__word-line hero__word-outline">upclass</span>
+          <span class="hero__word-line hero__word-lit">upclass</span>
+        </div>
+
+        <div class="hero__object" aria-hidden="true">
+          <div class="hero__halo"></div>
+          <canvas class="hero__3d"></canvas>
+          <img class="hero__fallback" src="/img/bolt-art-700.webp" alt="" width="409" height="701" decoding="async" />
+          <div class="hero__shadow"></div>
+        </div>
+
+        <div class="hero__content">
+          <h1 class="sr-only" id="hero-title">Upclass — iPhones e acessórios com procedência garantida</h1>
+          <div class="hero__bottom">
+            <p class="hero__lead" data-words>Você sabe quando é bom de&nbsp;verdade.</p>
+            <span class="hero__scroll" aria-hidden="true"><i></i></span>
+            <p class="hero__note caps" data-words>iPhones e acessórios<br />com procedência garantida<br />Baixada Fluminense — RJ</p>
+          </div>
+        </div>
+
+        <div class="wipe" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section class="manifesto" id="manifesto" data-theme="light" aria-labelledby="manifesto-title">
+      <div class="manifesto__pin">
+        <div class="manifesto__top">
+          <p class="caps section-label">( 01 — Manifesto )</p>
+          <p class="caps manifesto__kicker">Pertencimento, não só produto</p>
+        </div>
+        <h2 class="manifesto__title" id="manifesto-title">Não vendemos um aparelho. Vendemos o que ele <em>representa.</em></h2>
+        <div class="manifesto__bottom">
+          <p class="manifesto__note">Cada produto é um símbolo silencioso de evolução. Para alguns, é a porta de entrada. Para outros, uma atualização de imagem. Para todos, um passo natural — como se sempre tivesse feito parte da vida.</p>
+          <ol class="manifesto__pillars">
+            <li><span class="caps">01</span><strong>Entrega precisa.</strong></li>
+            <li><span class="caps">02</span><strong>Atendimento eficiente.</strong></li>
+            <li><span class="caps">03</span><strong>Procedência garantida.</strong></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="film" id="filme" data-theme="dark" aria-labelledby="film-title">
+      <div class="film__pin">
+        <div class="film__glow" aria-hidden="true"></div>
+        <h2 class="film__title" id="film-title">
+          <span class="film__line film__line--a">A evolução</span>
+          <span class="film__line film__line--b">faz parte de quem somos.</span>
+        </h2>
+        <div class="film__frame">
+          <video class="film__video" data-lazy data-autoplay muted loop playsinline preload="none" poster="/img/film/iphone-blue-1600.webp" aria-label="Filme da marca Upclass: raios, iPhones e a promessa Nada menos do que você espera.">
+            <source data-src="/video/film-1080.webm" type="video/webm" />
+            <source data-src="/video/film-720.mp4" type="video/mp4" />
+          </video>
+          <div class="film__hud" aria-hidden="true">
+            <span class="caps film__rec"><i></i>Filme da marca</span>
+            <span class="caps film__time">00:00 / 00:57</span>
+          </div>
+        </div>
+        <div class="film__foot">
+          <p class="caps film__note">O filme da Upclass — 57 segundos<br />sobre energia, evolução e detalhe.</p>
+          <ol class="film__chapters" aria-label="Capítulos do filme">
+            <li><button type="button" data-t="0"><span class="caps">00</span>Iniciar<i aria-hidden="true"></i></button></li>
+            <li><button type="button" data-t="4"><span class="caps">01</span>Evolução<i aria-hidden="true"></i></button></li>
+            <li><button type="button" data-t="12"><span class="caps">02</span>Energia<i aria-hidden="true"></i></button></li>
+            <li><button type="button" data-t="16"><span class="caps">03</span>Upgrade<i aria-hidden="true"></i></button></li>
+            <li><button type="button" data-t="20"><span class="caps">04</span>Símbolo<i aria-hidden="true"></i></button></li>
+            <li><button type="button" data-t="24"><span class="caps">05</span>iPhone<i aria-hidden="true"></i></button></li>
+            <li><button type="button" data-t="37"><span class="caps">06</span>Promessa<i aria-hidden="true"></i></button></li>
+            <li><button type="button" data-t="45"><span class="caps">07</span>Upclass<i aria-hidden="true"></i></button></li>
+          </ol>
+          <button class="film__toggle caps" type="button" aria-pressed="false">Pausar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="name" id="nome" data-theme="light" aria-labelledby="name-title">
+      <div class="name__pin">
+        <p class="caps section-label">( 02 — O nome )</p>
+        <h2 class="sr-only" id="name-title">Up mais Class: o significado do nome Upclass</h2>
+        <div class="name__word" aria-hidden="true">
+          <span class="name__up">up</span><span class="name__plus">+</span><span class="name__class">class</span>
+        </div>
+        <div class="name__defs">
+          <article class="name__def">
+            <p class="caps"><b>Up</b> — upgrade</p>
+            <p>A melhoria e a transformação que um iPhone de qualidade proporciona. Um passo à frente em tecnologia, design, funcionalidade e status.</p>
+          </article>
+          <p class="name__sum">Transformação, evolução e qualidade superior — em uma só palavra.</p>
+          <article class="name__def">
+            <p class="caps"><b>Class</b> — categoria</p>
+            <p>Produtos de alta qualidade, sofisticados e premium. Mais do que comprar um celular: fazer parte de quem aprecia a excelência.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="symbol" id="simbolo" data-theme="dark" aria-labelledby="symbol-title">
+      <div class="symbol__pin">
+        <div class="symbol__head">
+          <p class="caps section-label">( 03 — O símbolo )</p>
+          <h2 class="symbol__title" id="symbol-title">Na Upclass, cada detalhe é importante.</h2>
+          <p class="symbol__lead">O raio é um fenômeno da natureza: forte, rápido, impossível de ignorar. Dentro do nosso, há três ideias.</p>
+        </div>
+        <ol class="symbol__parts">
+          <li class="symbol__part is-active" data-part="bolts">
+            <button type="button" aria-pressed="true"><span class="caps">01</span><span class="symbol__part-title">Dois raios</span></button>
+            <p>Ícones de upgrade, evolução e potência. Aquele momento em que algo acontece — rápido, impactante, transformador.</p>
+          </li>
+          <li class="symbol__part" data-part="arrows">
+            <button type="button" aria-pressed="false"><span class="caps">02</span><span class="symbol__part-title">Setas embutidas</span></button>
+            <p>Apontam de cima para baixo e de baixo para cima: o símbolo universal de update. Evolução em fluxo, atualização constante.</p>
+          </li>
+          <li class="symbol__part" data-part="phone">
+            <button type="button" aria-pressed="false"><span class="caps">03</span><span class="symbol__part-title">O celular escondido</span></button>
+            <p>Entre os raios, de forma sutil, surge um telefone. Um <i>easter egg</i> que lembra o que está no centro de tudo.</p>
+          </li>
+        </ol>
+        <figure class="symbol__fig" data-part="bolts" aria-hidden="true">
+          <svg class="symbol__svg" viewBox="-70 -50 463.2 653.99">
+            <defs>
+              <linearGradient id="sym-up" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#80FFFF" /><stop offset="1" stop-color="#063FF1" /></linearGradient>
+              <linearGradient id="sym-lo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FC39CE" /><stop offset="1" stop-color="#D92B82" /></linearGradient>
+            </defs>
+            <path class="symbol__bolt symbol__bolt--up" fill="url(#sym-up)" d="M207.03 21.38L128.89 157.47C122.39 168.55 129.66 182.62 142.46 183.73L204.67 189.41C214.48 190.26 221.65 199.03 220.53 208.81L208.82 311.45C207.1 326.58 227.17 333.43 235.05 320.4L316.5 185.79C323.2 174.71 315.95 160.44 303.05 159.33L273.93 158.04L241.16 156.59C231.36 155.74 224.19 146.97 225.31 137.2L236.78 28.03C238.91 9.31 235.4 0 228.94 0C223.29 0 215.38 7.15 207.03 21.38Z" />
+            <path class="symbol__bolt symbol__bolt--lo" fill="url(#sym-lo)" d="M88.15 224.49L6.7 359.1C0 370.18 7.25 384.45 20.15 385.57L49.27 386.85L82.04 388.3C91.84 389.15 99.01 397.92 97.89 407.69L86.42 516.86C82.42 551.98 98.29 553.99 116.17 523.51L194.31 387.42C200.81 376.35 193.54 362.27 180.74 361.16L118.52 355.48C108.72 354.63 101.55 345.86 102.67 336.08L114.38 233.44C115.39 224.6 108.95 218.59 101.85 217.72C101.26 217.65 100.67 217.61 100.07 217.61C95.58 217.61 91.04 219.71 88.15 224.49Z" />
+            <g class="symbol__arrows">
+              <path d="M232 150 V-30 M214 -10 L232 -30 L250 -10" />
+              <path d="M92 404 V584 M74 564 L92 584 L110 564" />
+            </g>
+            <g class="symbol__phone">
+              <rect x="117" y="193" width="90" height="160" rx="16" />
+              <rect x="149" y="202" width="26" height="7" rx="3.5" />
+            </g>
+          </svg>
+          <figcaption class="symbol__labels">
+            <span class="caps symbol__label" data-for="bolts">Raio · Potência · Evolução</span>
+            <span class="caps symbol__label" data-for="arrows">Seta · Movimento · Upgrade</span>
+            <span class="caps symbol__label" data-for="phone">Celular</span>
+          </figcaption>
+        </figure>
+        <p class="caps symbol__count" aria-hidden="true"><span class="symbol__count-n">01</span> / 03</p>
+      </div>
+    </section>
+
+    <section class="collection" id="colecao" data-theme="dark" aria-labelledby="collection-title">
+      <div class="collection__pin">
+        <div class="collection__glow" aria-hidden="true"></div>
+        <p class="collection__marquee" aria-hidden="true">do comum ao extraordinário</p>
+        <div class="collection__head">
+          <p class="caps section-label">( 04 — Coleção )</p>
+          <h2 class="collection__title" id="collection-title">O que você encontra na Upclass</h2>
+          <p class="collection__lead">Produtos de extrema qualidade, com procedência garantida e preço justo.</p>
+        </div>
+        <div class="collection__viewport">
+          <ol class="collection__track">
+            <li class="card">
+              <article class="card__inner">
+                <header class="card__top caps"><span>01</span><span>Linha atual</span></header>
+                <div class="card__art"><img src="/img/film/iphone-blue-800.webp" srcset="/img/film/iphone-blue-800.webp 800w, /img/film/iphone-blue-1600.webp 1600w" sizes="(max-width: 760px) 78vw, 27vw" alt="iPhone azul entre os dois raios da Upclass" width="800" height="450" loading="lazy" decoding="async" /></div>
+                <footer class="card__text">
+                  <h3 class="card__title">iPhone</h3>
+                  <p class="card__desc">O modelo certo para o seu momento, com procedência garantida.</p>
+                </footer>
+              </article>
+            </li>
+            <li class="card">
+              <article class="card__inner">
+                <header class="card__top caps"><span>02</span><span>Proteção e estilo</span></header>
+                <div class="card__art"><picture><source type="image/avif" srcset="/img/mk/cases-800.avif 800w, /img/mk/cases-1600.avif 1600w" sizes="(max-width: 760px) 78vw, 27vw" /><img src="/img/mk/cases-800.webp" srcset="/img/mk/cases-800.webp 800w, /img/mk/cases-1600.webp 1600w" sizes="(max-width: 760px) 78vw, 27vw" alt="Capas de iPhone com as cores da Upclass" width="800" height="586" loading="lazy" decoding="async" /></picture></div>
+                <footer class="card__text">
+                  <h3 class="card__title">Acessórios</h3>
+                  <p class="card__desc">Capas, películas e o que mais completa o seu aparelho — escolhidos com o mesmo rigor.</p>
+                </footer>
+              </article>
+            </li>
+            <li class="card">
+              <article class="card__inner">
+                <header class="card__top caps"><span>03</span><span>Ecossistema</span></header>
+                <div class="card__art"><picture><source type="image/avif" srcset="/img/mk/watch-800.avif 800w, /img/mk/watch-1600.avif 1600w" sizes="(max-width: 760px) 78vw, 27vw" /><img src="/img/mk/watch-800.webp" srcset="/img/mk/watch-800.webp 800w, /img/mk/watch-1600.webp 1600w" sizes="(max-width: 760px) 78vw, 27vw" alt="Apple Watch com a marca Upclass na tela" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+                <footer class="card__text">
+                  <h3 class="card__title">Produtos Apple</h3>
+                  <p class="card__desc">Apple Watch, AirPods e o ecossistema que acompanha o seu iPhone.</p>
+                </footer>
+              </article>
+            </li>
+            <li class="card">
+              <article class="card__inner">
+                <header class="card__top caps"><span>04</span><span>Próximo passo</span></header>
+                <div class="card__art"><img src="/img/film/iphone-ti-800.webp" srcset="/img/film/iphone-ti-800.webp 800w, /img/film/iphone-ti-1600.webp 1600w" sizes="(max-width: 760px) 78vw, 27vw" alt="iPhone Pro titânio sobre os raios" width="800" height="450" loading="lazy" decoding="async" /></div>
+                <footer class="card__text">
+                  <h3 class="card__title">Upgrade</h3>
+                  <p class="card__desc">Para quem já é Apple e quer o próximo passo, com a orientação de quem entende.</p>
+                </footer>
+              </article>
+            </li>
+            <li class="card">
+              <article class="card__inner">
+                <header class="card__top caps"><span>05</span><span>Relacionamento</span></header>
+                <div class="card__art"><picture><source type="image/avif" srcset="/img/mk/boxes-800.avif 800w, /img/mk/boxes-1600.avif 1600w" sizes="(max-width: 760px) 78vw, 27vw" /><img src="/img/mk/boxes-800.webp" srcset="/img/mk/boxes-800.webp 800w, /img/mk/boxes-1600.webp 1600w" sizes="(max-width: 760px) 78vw, 27vw" alt="Embalagens Upclass com o símbolo do raio" width="800" height="586" loading="lazy" decoding="async" /></picture></div>
+                <footer class="card__text">
+                  <h3 class="card__title">Pós-venda</h3>
+                  <p class="card__desc">Atendimento próximo, humano e contínuo depois da compra. A relação não termina no caixa.</p>
+                </footer>
+              </article>
+            </li>
+          </ol>
+        </div>
+        <div class="collection__progress" aria-hidden="true"><i></i></div>
+      </div>
+    </section>
+
+    <section class="moments" id="momentos" data-theme="light" aria-labelledby="moments-title">
+      <div class="moments__head">
+        <p class="caps section-label">( 05 — Para cada momento )</p>
+        <h2 class="moments__title" id="moments-title">Cada cliente chega em um momento. Todos saem com a mesma certeza.</h2>
+      </div>
+      <ol class="moments__list">
+        <li class="moment">
+          <span class="caps moment__num">01</span>
+          <h3 class="moment__title">O primeiro iPhone</h3>
+          <p class="moment__text">Um passo natural, sem pressa e sem dúvida. Você escolhe com calma; a gente garante a procedência e explica cada detalhe.</p>
+          <div class="moment__media"><picture><source type="image/avif" srcset="/img/mk/homescreen-800.avif 800w, /img/mk/homescreen-1600.avif 1600w" sizes="(max-width: 760px) 90vw, 1px" /><img src="/img/mk/homescreen-800.webp" srcset="/img/mk/homescreen-800.webp 800w, /img/mk/homescreen-1600.webp 1600w" sizes="(max-width: 760px) 90vw, 1px" alt="Tela inicial de iPhone com o app da Upclass" width="800" height="650" loading="lazy" decoding="async" /></picture></div>
+        </li>
+        <li class="moment">
+          <span class="caps moment__num">02</span>
+          <h3 class="moment__title">A hora do upgrade</h3>
+          <p class="moment__text">Já é Apple? Atendimento consultivo para escolher o próximo modelo — atual, atualizado, do seu jeito.</p>
+          <div class="moment__media"><picture><source type="image/avif" srcset="/img/mk/phone-800.avif 800w, /img/mk/phone-1600.avif 1600w" sizes="(max-width: 760px) 90vw, 1px" /><img src="/img/mk/phone-800.webp" srcset="/img/mk/phone-800.webp 800w, /img/mk/phone-1600.webp 1600w" sizes="(max-width: 760px) 90vw, 1px" alt="Dois iPhones com o padrão de raios da Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        </li>
+        <li class="moment">
+          <span class="caps moment__num">03</span>
+          <h3 class="moment__title">Ferramenta de trabalho</h3>
+          <p class="moment__text">Câmera, memória e desempenho para quem cria, vende e atende pelo celular. O modelo certo para o seu trabalho.</p>
+          <div class="moment__media"><picture><source type="image/avif" srcset="/img/mk/macbook-800.avif 800w, /img/mk/macbook-1600.avif 1600w" sizes="(max-width: 760px) 90vw, 1px" /><img src="/img/mk/macbook-800.webp" srcset="/img/mk/macbook-800.webp 800w, /img/mk/macbook-1600.webp 1600w" sizes="(max-width: 760px) 90vw, 1px" alt="Profissional segurando um iPhone na tela de um MacBook" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        </li>
+        <li class="moment">
+          <span class="caps moment__num">04</span>
+          <h3 class="moment__title">Para o seu negócio</h3>
+          <p class="moment__text">iPhone, iPad e Apple Watch para produtividade e imagem — com uma loja física como ponto de confiança.</p>
+          <div class="moment__media"><picture><source type="image/avif" srcset="/img/mk/tablet-800.avif 800w, /img/mk/tablet-1600.avif 1600w" sizes="(max-width: 760px) 90vw, 1px" /><img src="/img/mk/tablet-800.webp" srcset="/img/mk/tablet-800.webp 800w, /img/mk/tablet-1600.webp 1600w" sizes="(max-width: 760px) 90vw, 1px" alt="iPad e iPhone com a marca Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        </li>
+        <li class="moment">
+          <span class="caps moment__num">05</span>
+          <h3 class="moment__title">Ecossistema completo</h3>
+          <p class="moment__text">Para quem já vive o universo Apple: atendimento personalizado, discreto e ágil, sem ruído.</p>
+          <div class="moment__media"><picture><source type="image/avif" srcset="/img/mk/watch-800.avif 800w, /img/mk/watch-1600.avif 1600w" sizes="(max-width: 760px) 90vw, 1px" /><img src="/img/mk/watch-800.webp" srcset="/img/mk/watch-800.webp 800w, /img/mk/watch-1600.webp 1600w" sizes="(max-width: 760px) 90vw, 1px" alt="Apple Watch com a marca Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        </li>
+        <li class="moment">
+          <span class="caps moment__num">06</span>
+          <h3 class="moment__title">Acessórios e suporte</h3>
+          <p class="moment__text">Capa, película, carregador. Resolvido rápido, com quem você pode contar se algo der errado.</p>
+          <div class="moment__media"><picture><source type="image/avif" srcset="/img/mk/headphones-800.avif 800w, /img/mk/headphones-1600.avif 1600w" sizes="(max-width: 760px) 90vw, 1px" /><img src="/img/mk/headphones-800.webp" srcset="/img/mk/headphones-800.webp 800w, /img/mk/headphones-1600.webp 1600w" sizes="(max-width: 760px) 90vw, 1px" alt="Fone de ouvido branco com o raio da Upclass" width="800" height="800" loading="lazy" decoding="async" /></picture></div>
+        </li>
+      </ol>
+      <div class="moments__cursor" aria-hidden="true">
+        <div class="moments__shot"><picture><source type="image/avif" srcset="/img/mk/homescreen-800.avif 800w, /img/mk/homescreen-1600.avif 1600w" sizes="26vw" /><img src="/img/mk/homescreen-800.webp" srcset="/img/mk/homescreen-800.webp 800w, /img/mk/homescreen-1600.webp 1600w" sizes="26vw" alt="" width="800" height="650" loading="lazy" decoding="async" /></picture></div>
+        <div class="moments__shot"><picture><source type="image/avif" srcset="/img/mk/phone-800.avif 800w, /img/mk/phone-1600.avif 1600w" sizes="26vw" /><img src="/img/mk/phone-800.webp" srcset="/img/mk/phone-800.webp 800w, /img/mk/phone-1600.webp 1600w" sizes="26vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        <div class="moments__shot"><picture><source type="image/avif" srcset="/img/mk/macbook-800.avif 800w, /img/mk/macbook-1600.avif 1600w" sizes="26vw" /><img src="/img/mk/macbook-800.webp" srcset="/img/mk/macbook-800.webp 800w, /img/mk/macbook-1600.webp 1600w" sizes="26vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        <div class="moments__shot"><picture><source type="image/avif" srcset="/img/mk/tablet-800.avif 800w, /img/mk/tablet-1600.avif 1600w" sizes="26vw" /><img src="/img/mk/tablet-800.webp" srcset="/img/mk/tablet-800.webp 800w, /img/mk/tablet-1600.webp 1600w" sizes="26vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        <div class="moments__shot"><picture><source type="image/avif" srcset="/img/mk/watch-800.avif 800w, /img/mk/watch-1600.avif 1600w" sizes="26vw" /><img src="/img/mk/watch-800.webp" srcset="/img/mk/watch-800.webp 800w, /img/mk/watch-1600.webp 1600w" sizes="26vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+        <div class="moments__shot"><picture><source type="image/avif" srcset="/img/mk/headphones-800.avif 800w, /img/mk/headphones-1600.avif 1600w" sizes="26vw" /><img src="/img/mk/headphones-800.webp" srcset="/img/mk/headphones-800.webp 800w, /img/mk/headphones-1600.webp 1600w" sizes="26vw" alt="" width="800" height="800" loading="lazy" decoding="async" /></picture></div>
+      </div>
+    </section>
+
+    <section class="promise" id="diferenciais" data-theme="dark" aria-labelledby="promise-title">
+      <div class="promise__head">
+        <p class="caps section-label">( 06 — Por que a Upclass )</p>
+        <h2 class="promise__title" id="promise-title">Somos a melhor escolha para quem busca uma compra <em>segura.</em></h2>
+        <p class="promise__lead">Comprar um iPhone não precisa vir com dúvida. Por isso cuidamos de cada etapa — antes, durante e depois.</p>
+      </div>
+      <div class="bento">
+        <article class="tile tile--store">
+          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 50vw" /><img src="/img/mk/wall-800.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 50vw" alt="Parede da loja com o logotipo Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+          <div class="tile__body"><span class="caps">01</span><h3 class="tile__title">Loja física</h3><p>Um endereço de verdade para ver de perto, tirar dúvidas e voltar quando quiser.</p></div>
+        </article>
+        <article class="tile tile--origin">
+          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/box-800.avif 800w, /img/mk/box-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 25vw" /><img src="/img/mk/box-800.webp" srcset="/img/mk/box-800.webp 800w, /img/mk/box-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 25vw" alt="Caixa Upclass com o símbolo do raio" width="800" height="572" loading="lazy" decoding="async" /></picture></div>
+          <div class="tile__body"><span class="caps">02</span><h3 class="tile__title">Procedência garantida</h3><p>Aparelhos com origem comprovada e responsabilidade em cada etapa.</p></div>
+        </article>
+        <article class="tile tile--quote">
+          <p class="caps">Nosso slogan, nosso padrão</p>
+          <p class="tile__quote">Nada menos do que você espera.</p>
+        </article>
+        <article class="tile tile--delivery">
+          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/giftbag-800.avif 800w, /img/mk/giftbag-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 25vw" /><img src="/img/mk/giftbag-800.webp" srcset="/img/mk/giftbag-800.webp 800w, /img/mk/giftbag-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 25vw" alt="Sacola Upclass" width="800" height="600" loading="lazy" decoding="async" /></picture></div>
+          <div class="tile__body"><span class="caps">03</span><h3 class="tile__title">Entrega precisa</h3><p>Do pedido às suas mãos, com o cuidado de quem confere cada detalhe.</p></div>
+        </article>
+        <article class="tile tile--advice">
+          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/shirt-800.avif 800w, /img/mk/shirt-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 25vw" /><img src="/img/mk/shirt-800.webp" srcset="/img/mk/shirt-800.webp 800w, /img/mk/shirt-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 25vw" alt="Camisa do uniforme Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
+          <div class="tile__body"><span class="caps">04</span><h3 class="tile__title">Atendimento consultivo</h3><p>Menos vendedor, mais parceiro. A gente ajuda você a escolher o modelo certo.</p></div>
+        </article>
+        <article class="tile tile--after">
+          <div class="tile__media tile__media--video">
+            <video data-lazy data-autoplay muted loop playsinline preload="none" poster="/video/bolts-glass-poster.webp" aria-hidden="true">
+              <source data-src="/video/bolts-glass.webm" type="video/webm" />
+              <source data-src="/video/bolts-glass.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <div class="tile__body"><span class="caps">05</span><h3 class="tile__title">Pós-venda</h3><p>A relação continua depois da compra. Estamos por aqui para o que precisar.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="upgrade" id="upgrade" data-theme="dark" aria-labelledby="upgrade-title">
+      <div class="upgrade__pin">
+        <p class="upgrade__marquee" aria-hidden="true"><span>É hora de dar um up —&nbsp;</span><span>É hora de dar um up —&nbsp;</span><span>É hora de dar um up —&nbsp;</span></p>
+        <div class="upgrade__halo" aria-hidden="true"></div>
+        <div class="upgrade__window">
+          <video class="upgrade__video" data-lazy muted playsinline preload="none" poster="/video/symbol-poster.webp" aria-hidden="true">
+            <source data-src="/video/symbol-scrub.mp4" type="video/mp4" media="(min-width: 761px)" />
+            <source data-src="/video/symbol-scrub-540.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <div class="upgrade__copy">
+          <p class="caps upgrade__note">( 07 — Upgrade )</p>
+          <h2 class="upgrade__title" id="upgrade-title">Prepare-se para um upgrade na sua experiência.</h2>
+          <p class="caps upgrade__note upgrade__note--end">Para quem já é Apple<br />e quer o próximo passo.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="values" id="valores" data-theme="light" aria-labelledby="values-title">
+      <div class="values__head">
+        <p class="caps section-label">( 08 — Missão, visão e valores )</p>
+        <h2 class="values__title" id="values-title">Confiança se constrói no detalhe.</h2>
+      </div>
+      <div class="values__mv">
+        <article class="mv">
+          <p class="caps mv__label">Missão</p>
+          <p class="mv__text">Oferecer produtos de extrema qualidade com procedência garantida, criando uma experiência confiável e próxima, com preços acessíveis e atendimento que valoriza cada cliente.</p>
+        </article>
+        <article class="mv">
+          <p class="caps mv__label">Visão</p>
+          <p class="mv__text">Ser referência na Baixada Fluminense em iPhones e produtos Apple, reconhecida por tornar o desejo de ter um iPhone uma realidade acessível, segura e valorizada.</p>
+        </article>
+      </div>
+      <ol class="values__list">
+        <li class="value">
+          <span class="value__rule" aria-hidden="true"></span>
+          <span class="value__num caps">01</span>
+          <h3 class="value__title">Segurança</h3>
+          <p class="value__text">Aparelhos com garantia de procedência e responsabilidade em cada etapa da compra.</p>
+        </li>
+        <li class="value">
+          <span class="value__rule" aria-hidden="true"></span>
+          <span class="value__num caps">02</span>
+          <h3 class="value__title">Qualidade</h3>
+          <p class="value__text">Produtos selecionados com rigor e cuidado em cada detalhe.</p>
+        </li>
+        <li class="value">
+          <span class="value__rule" aria-hidden="true"></span>
+          <span class="value__num caps">03</span>
+          <h3 class="value__title">Transparência</h3>
+          <p class="value__text">Compromisso com a verdade em todas as relações.</p>
+        </li>
+        <li class="value">
+          <span class="value__rule" aria-hidden="true"></span>
+          <span class="value__num caps">04</span>
+          <h3 class="value__title">Relacionamento</h3>
+          <p class="value__text">Atendimento próximo, humano e contínuo — da venda ao pós-venda.</p>
+        </li>
+        <li class="value">
+          <span class="value__rule" aria-hidden="true"></span>
+          <span class="value__num caps">05</span>
+          <h3 class="value__title">Acesso com dignidade</h3>
+          <p class="value__text">O iPhone ao seu alcance, sem abrir mão da experiência.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="belong" id="pertencimento" data-theme="dark" aria-labelledby="belong-title">
+      <div class="belong__pin">
+        <div class="belong__cols" aria-hidden="true">
+          <div class="belong__col">
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/billboard-800.avif 800w, /img/mk/billboard-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/billboard-800.webp" srcset="/img/mk/billboard-800.webp 800w, /img/mk/billboard-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/box-800.avif 800w, /img/mk/box-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/box-800.webp" srcset="/img/mk/box-800.webp 800w, /img/mk/box-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="572" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/bottle-800.avif 800w, /img/mk/bottle-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/bottle-800.webp" srcset="/img/mk/bottle-800.webp 800w, /img/mk/bottle-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/wall-800.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/tote-800.avif 800w, /img/mk/tote-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/tote-800.webp" srcset="/img/mk/tote-800.webp 800w, /img/mk/tote-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/meeting-800.avif 800w, /img/mk/meeting-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/meeting-800.webp" srcset="/img/mk/meeting-800.webp 800w, /img/mk/meeting-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          </div>
+          <div class="belong__col">
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/giftbag-800.avif 800w, /img/mk/giftbag-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/giftbag-800.webp" srcset="/img/mk/giftbag-800.webp 800w, /img/mk/giftbag-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/totem-800.avif 800w, /img/mk/totem-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/totem-800.webp" srcset="/img/mk/totem-800.webp 800w, /img/mk/totem-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/drawstring-800.avif 800w, /img/mk/drawstring-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/drawstring-800.webp" srcset="/img/mk/drawstring-800.webp 800w, /img/mk/drawstring-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/jacket-800.avif 800w, /img/mk/jacket-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/jacket-800.webp" srcset="/img/mk/jacket-800.webp 800w, /img/mk/jacket-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/shirt-800.avif 800w, /img/mk/shirt-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/shirt-800.webp" srcset="/img/mk/shirt-800.webp 800w, /img/mk/shirt-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/cases-800.avif 800w, /img/mk/cases-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/cases-800.webp" srcset="/img/mk/cases-800.webp 800w, /img/mk/cases-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="586" loading="lazy" decoding="async" /></picture></figure>
+          </div>
+          <div class="belong__col">
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/wall-800.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/tote-800.avif 800w, /img/mk/tote-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/tote-800.webp" srcset="/img/mk/tote-800.webp 800w, /img/mk/tote-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/meeting-800.avif 800w, /img/mk/meeting-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/meeting-800.webp" srcset="/img/mk/meeting-800.webp 800w, /img/mk/meeting-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/billboard-800.avif 800w, /img/mk/billboard-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/billboard-800.webp" srcset="/img/mk/billboard-800.webp 800w, /img/mk/billboard-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/box-800.avif 800w, /img/mk/box-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/box-800.webp" srcset="/img/mk/box-800.webp 800w, /img/mk/box-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="572" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/bottle-800.avif 800w, /img/mk/bottle-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/bottle-800.webp" srcset="/img/mk/bottle-800.webp 800w, /img/mk/bottle-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+          </div>
+          <div class="belong__col">
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/jacket-800.avif 800w, /img/mk/jacket-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/jacket-800.webp" srcset="/img/mk/jacket-800.webp 800w, /img/mk/jacket-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/shirt-800.avif 800w, /img/mk/shirt-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/shirt-800.webp" srcset="/img/mk/shirt-800.webp 800w, /img/mk/shirt-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/cases-800.avif 800w, /img/mk/cases-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/cases-800.webp" srcset="/img/mk/cases-800.webp 800w, /img/mk/cases-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="586" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/giftbag-800.avif 800w, /img/mk/giftbag-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/giftbag-800.webp" srcset="/img/mk/giftbag-800.webp 800w, /img/mk/giftbag-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/totem-800.avif 800w, /img/mk/totem-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/totem-800.webp" srcset="/img/mk/totem-800.webp 800w, /img/mk/totem-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/drawstring-800.avif 800w, /img/mk/drawstring-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/drawstring-800.webp" srcset="/img/mk/drawstring-800.webp 800w, /img/mk/drawstring-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          </div>
+        </div>
+        <div class="belong__veil" aria-hidden="true"></div>
+        <div class="belong__copy">
+          <p class="caps section-label">( 09 — A marca no mundo )</p>
+          <h2 class="belong__title" id="belong-title">Hoje, deixamos de vender produtos. Vendemos <em>pertencimento.</em></h2>
+          <p class="belong__text">O que entregamos vai além de um iPhone: a possibilidade de ser percebido de forma diferente — e melhor — pelo mundo ao redor.</p>
+        </div>
+      </div>
+      <ul class="sr-only">
+        <li>A campanha “É hora de dar um up” em painéis iluminados</li>
+        <li>Sacola de presente Upclass</li>
+        <li>Parede com o logotipo Upclass</li>
+        <li>Jaqueta da equipe com a marca</li>
+        <li>Caixa de embalagem Upclass</li>
+        <li>Totem digital anunciando iPhone</li>
+        <li>Ecobag com o logotipo Upclass</li>
+        <li>Camisa do uniforme Upclass</li>
+        <li>Garrafas com o padrão de raios</li>
+        <li>Mochila saco com o padrão de raios</li>
+        <li>Sala com a marca Upclass na parede</li>
+        <li>Capas de iPhone com o padrão de raios</li>
+      </ul>
+    </section>
+
+    <section class="closing" id="contato" data-theme="dark" aria-labelledby="closing-title">
+      <div class="closing__pin">
+        <div class="closing__bg" aria-hidden="true">
+          <img src="/img/bg-glow-1600.webp" srcset="/img/bg-glow-900.webp 900w, /img/bg-glow-1600.webp 1600w, /img/bg-glow-2560.webp 2560w" sizes="100vw" alt="" loading="lazy" decoding="async" />
+        </div>
+        <div class="closing__copy">
+          <p class="caps section-label">( 10 — Contato )</p>
+          <h2 class="closing__title" id="closing-title">Nada menos do que você <em>espera.</em></h2>
+          <p class="closing__lead">Já garantiu o seu? Não deixe para depois.</p>
+          <a class="closing__cta" href="#rodape" data-contact="whatsapp">
+            <span>Falar com a Upclass</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="rodape" data-theme="dark">
+    <div class="footer__card">
+      <div class="footer__glow" aria-hidden="true"></div>
+      <div class="footer__top">
+        <h2 class="footer__title">Estamos por aqui para o que precisar. <span>Conte com a gente.</span></h2>
+        <ul class="footer__channels">
+          <li><a class="channel" data-contact="whatsapp" href="#rodape"><span class="caps channel__label">WhatsApp</span><span class="channel__value" data-contact-value>em breve</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg></a></li>
+          <li><a class="channel" data-contact="instagram" href="#rodape"><span class="caps channel__label">Instagram</span><span class="channel__value" data-contact-value>em breve</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg></a></li>
+          <li><a class="channel" data-contact="address" href="#rodape"><span class="caps channel__label">Loja física</span><span class="channel__value" data-contact-value>endereço em breve</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg></a></li>
+        </ul>
+      </div>
+      <div class="footer__stage">
+        <video class="footer__video" data-lazy muted playsinline preload="none" aria-hidden="true">
+          <source data-src="/video/logo-resolve.webm" type="video/webm" />
+          <source data-src="/video/logo-resolve.mp4" type="video/mp4" />
+        </video>
+        <p class="footer__ticker" aria-hidden="true"><span>Entrega precisa · Atendimento eficiente · Procedência garantida · Você sabe quando é bom de verdade ·&nbsp;</span><span>Entrega precisa · Atendimento eficiente · Procedência garantida · Você sabe quando é bom de verdade ·&nbsp;</span></p>
+      </div>
+      <div class="footer__cols">
+        <nav class="footer__nav" aria-label="Rodapé">
+          <p class="caps footer__label">Navegue</p>
+          <ul>
+            <li><a class="roll" href="#topo"><span data-text="Início">Início</span></a></li>
+            <li><a class="roll" href="#manifesto"><span data-text="Manifesto">Manifesto</span></a></li>
+            <li><a class="roll" href="#filme"><span data-text="Filme">Filme</span></a></li>
+            <li><a class="roll" href="#simbolo"><span data-text="Símbolo">Símbolo</span></a></li>
+            <li><a class="roll" href="#colecao"><span data-text="Coleção">Coleção</span></a></li>
+            <li><a class="roll" href="#momentos"><span data-text="Momentos">Momentos</span></a></li>
+            <li><a class="roll" href="#diferenciais"><span data-text="Diferenciais">Diferenciais</span></a></li>
+            <li><a class="roll" href="#valores"><span data-text="Valores">Valores</span></a></li>
+          </ul>
+        </nav>
+        <div class="footer__col">
+          <p class="caps footer__label">Promessa</p>
+          <p class="footer__promise">Procedência, atendimento de excelência e entregas precisas. Acreditamos que confiança se constrói no detalhe.</p>
+        </div>
+        <div class="footer__col">
+          <p class="caps footer__label">Onde estamos</p>
+          <p class="footer__place">Baixada Fluminense — RJ</p>
+          <p class="footer__clock caps"><i aria-hidden="true"></i><span class="footer__time">--:--</span> no Rio de Janeiro</p>
+        </div>
+        <button class="footer__up" type="button" data-scroll-top>
+          <span class="caps">Voltar ao topo</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M4 7l4-4 4 4" /></svg>
+        </button>
+      </div>
+      <div class="footer__bottom caps">
+        <span>© <span class="footer__year">2026</span> Upclass</span>
+        <span>Você sabe quando é bom de verdade.</span>
+        <span>iPhones e acessórios com procedência</span>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/src/js/main.js"></script>
+</body>
+</html>
