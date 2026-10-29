@@ -86,6 +86,9 @@
     <p class="menu__foot caps">Nada menos do que você espera.</p>
   </nav>
 
+  <!-- the 3D mark, over the page: it stands in the hero and flies down into the manifesto with the scroll (hero.js) -->
+  <div class="mark" aria-hidden="true"><canvas class="mark__gl"></canvas></div>
+
   <main id="conteudo">
     <section class="hero" id="topo" aria-labelledby="hero-title">
       <div class="hero__stage">
@@ -103,11 +106,17 @@
           <span class="hero__word-line hero__word-lit">upclass</span>
         </div>
 
+        <!-- the stage the mark stands on: a beam from above, a lacquered floor with a lit horizon (the mark itself and
+             its reflection are drawn in .mark, so it can leave the hero) -->
+        <div class="hero__set" aria-hidden="true">
+          <div class="hero__beam"></div>
+          <div class="hero__floor"></div>
+          <div class="hero__pool"></div>
+        </div>
+
         <div class="hero__object" aria-hidden="true">
           <div class="hero__halo"></div>
-          <canvas class="hero__3d"></canvas>
           <img class="hero__fallback" src="/img/bolt-art-700.webp" alt="" width="409" height="701" decoding="async" />
-          <div class="hero__shadow"></div>
         </div>
 
         <div class="hero__content">
@@ -124,8 +133,20 @@
 
     <section class="manifesto" id="manifesto" data-theme="light" aria-labelledby="manifesto-title">
       <div class="manifesto__pin">
-        <div class="manifesto__inner atmo">
-          <h2 class="manifesto__title" id="manifesto-title">Não vendemos um aparelho. Vendemos o que ele <em>representa.</em></h2>
+        <div class="manifesto__inner">
+          <!-- the same sky as the details further down: its glows and its floating pieces (flow.js) -->
+          <div class="manifesto__sky" aria-hidden="true">
+            <div class="flow__glow flow__glow--warm"></div>
+            <div class="flow__glow flow__glow--pink"></div>
+            <div class="flow__glow flow__glow--cool"></div>
+            <canvas class="manifesto__gl"></canvas>
+          </div>
+          <!-- three lines, centred like an inscription; the mark lands at the end of the last one (hero.js) -->
+          <h2 class="manifesto__title" id="manifesto-title">
+            <span class="manifesto__line manifesto__line--lead"><span class="manifesto__text">Não vendemos um aparelho.</span></span>
+            <span class="manifesto__line"><span class="manifesto__text">Vendemos o que ele</span></span>
+            <span class="manifesto__line"><span class="manifesto__text">representa.<span class="manifesto__seat" aria-hidden="true"><img src="/img/bolt-art-700.webp" alt="" width="409" height="701" loading="lazy" decoding="async" /></span></span></span>
+          </h2>
           <div class="manifesto__bottom">
             <p class="manifesto__note">Cada produto é um símbolo silencioso de evolução. Para alguns, é a porta de entrada. Para outros, uma atualização de imagem. Para todos, um passo natural — como se sempre tivesse feito parte da vida.</p>
             <ol class="manifesto__pillars">

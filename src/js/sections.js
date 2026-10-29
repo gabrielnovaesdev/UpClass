@@ -5,7 +5,7 @@ import { applyContacts } from './config.js';
 import { lazyVideos } from './video.js';
 import { canRunGL, evolutionFlat, evolutionStage, filmControls } from './evo-section.js';
 import { initDetail } from './detail.js';
-import { initFlow } from './flow.js';
+import { initFlow, initManifestoSky } from './flow.js';
 import { initMorph } from './morph.js';
 
 // Rhythm of the page: strong moments (film, details, collection, upgrade, belong) alternate with calm ones
@@ -26,11 +26,12 @@ export function initSections({ reduce, lenis, finePointer }) {
   initMorph({ reduce });
   if (finePointer) momentsCursor({ reduce });
   initFlow({ reduce, finePointer });
+  initManifestoSky({ reduce, finePointer });
   if (reduce) return;
 
   manifesto();
   // the details pin (see detail.js) is created here; ScrollTrigger.sort() below puts it back in page order
-  initDetail({ reduce, finePointer, lenis });
+  initDetail({ reduce, finePointer });
   values();
   bento();
   moments();
@@ -50,29 +51,34 @@ export function initSections({ reduce, lenis, finePointer }) {
   ScrollTrigger.sort();
 }
 
-/* ---- 01 Manifesto: the sentence sharpens word by word as you scroll (Lia).
+/* ---- 01 Manifesto: an inscription the mark comes down to.
    It starts under the pinned hero: while it rises, its inner layer is held to the screen, so when the hero's dark
-   ground lifts the manifesto is already there, and its title rises from below into place, with the scroll (Noomo). */
+   ground lifts the manifesto is already there, in the sky of the details (flow.js). With the scroll its three lines
+   rise one by one into place, and the mark, flying down from the hero, lands at the end of the last (hero.js). */
 function manifesto() {
   const inner = document.querySelector('.manifesto__inner');
   const title = document.querySelector('.manifesto__title');
+  const lines = title.querySelectorAll('.manifesto__text');
   const note = document.querySelector('.manifesto__note');
   const pillars = document.querySelectorAll('.manifesto__pillars li');
   const handOver = { trigger: '.manifesto', end: 'top top', invalidateOnRefresh: true };
   gsap.fromTo(inner, { y: () => -window.innerHeight }, { y: 0, ease: 'none', scrollTrigger: { ...handOver, start: 'top bottom', scrub: true } });
-  gsap.fromTo(title, { y: () => window.innerHeight * 0.32 }, { y: 0, ease: 'power2.out', scrollTrigger: { ...handOver, start: 'top 85%', scrub: 0.4 } });
-  // split inside the accent too, so the gradient word resolves with the rest
-  const words = SplitText.create(title, { type: 'words', wordsClass: 'word' }).words;
+  gsap.fromTo(title, { y: () => window.innerHeight * 0.18 }, { y: 0, ease: 'power2.out', scrollTrigger: { ...handOver, start: 'top 85%', scrub: 0.4 } });
   const narrow = window.matchMedia('(max-width: 760px)').matches;
-  gsap.set(words, narrow ? { opacity: 0.12 } : { opacity: 0.1, filter: 'blur(14px)' });
+  gsap.set(lines, { yPercent: 110 });
   gsap.set([note, pillars], { autoAlpha: 0, y: 16 });
+  // the mark lands at LAND of this timeline (hero.js reads it): the last line is in place just before
   gsap.timeline({
-    scrollTrigger: { trigger: '.manifesto__pin', start: 'top top', end: '+=130%', pin: !narrow, scrub: 0.6, ...(narrow && { start: 'top 75%', end: 'bottom 70%' }) },
+    scrollTrigger: {
+      id: 'manifesto', trigger: '.manifesto__pin', start: 'top top', end: '+=150%', pin: !narrow, scrub: 0.6,
+      ...(narrow && { start: 'top 80%', end: 'bottom 75%' }),
+    },
   })
-    .to(words, { opacity: 1, filter: 'blur(0px)', ease: 'none', duration: 0.5, stagger: 0.12 })
-    .to(note, { autoAlpha: 0.72, y: 0, duration: 0.5, ease: 'power2.out' })
-    .to(pillars, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power2.out', stagger: 0.15 }, '<0.1')
-    .to({}, { duration: 0.3 });
+    .to(lines, { yPercent: 0, ease: 'power3.out', duration: 0.5, stagger: 0.16 })
+    .to({}, { duration: 0.35 })
+    .to(note, { autoAlpha: 0.72, y: 0, duration: 0.4, ease: 'power2.out' })
+    .to(pillars, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out', stagger: 0.12 }, '<0.1')
+    .to({}, { duration: 0.25 });
 }
 
 /* ---- 03 Name: "up" and "class" travel towards each other until the plus disappears (Mana) */

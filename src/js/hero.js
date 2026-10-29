@@ -1,4 +1,5 @@
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 
 function hasWebGL() {
@@ -16,7 +17,9 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
   const bg = hero.querySelector('.hero__bg');
   const word = hero.querySelector('.hero__word');
   const wordLines = hero.querySelectorAll('.hero__word-line');
-  const canvas3d = hero.querySelector('.hero__3d');
+  const mark = document.querySelector('.mark');
+  const canvas3d = mark.querySelector('.mark__gl');
+  const set = hero.querySelector('.hero__set');
   const words = hero.querySelectorAll('[data-words]');
   const scrollCue = hero.querySelector('.hero__scroll');
   const navEl = document.querySelector('.nav');
@@ -41,7 +44,7 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
   let bolt = null;
   const boltReady = hasWebGL()
     ? import('./bolt3d.js')
-        .then(({ createBolt }) => createBolt(canvas3d, svgText, { host: stage, mode: 'hero' }))
+        .then(({ createBolt }) => createBolt(canvas3d, svgText, { host: mark, mode: 'hero' }))
         .then((b) => (bolt = b))
         .catch(() => document.documentElement.classList.add('no-webgl'))
     : Promise.resolve(document.documentElement.classList.add('no-webgl'));
@@ -105,8 +108,6 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
       invalidateOnRefresh: true,
       onUpdate: (self) => {
         const p = self.progress;
-        bolt?.scroll((p / 0.62) * 0.8); // the full turn is done as it leaves the frame
-        bolt?.hold(p > 0.7);
         if (leaving !== p > 0.01) { leaving = p > 0.01; hero.classList.toggle('is-leaving', leaving); }
         // the capsule turns light once the curtain's edge has passed under it
         nav.setTheme(lift(p) > 0.75 ? 'light' : 'dark');
@@ -117,12 +118,76 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     .to(content, { y: () => -vh() * 0.16, opacity: 0, ease: 'power2.in', duration: 0.24 }, 0)
     .to(word, { y: () => -vh() * 1.15, scale: 1.12, ease: 'power2.in', duration: 0.6 }, 0.02)
     .to(word, { opacity: 0, ease: 'power1.in', duration: 0.2 }, 0.42)
-    .to(object, { y: () => -vh() * 1.3, scale: 1.14, ease: 'power2.in', duration: 0.58 }, 0.08)
+    .to(object, { opacity: 0, ease: 'power1.in', duration: 0.2 }, 0.04)
+    .to(set, { opacity: 0, ease: 'power1.in', duration: 0.3 }, 0.08)
     .to(bg, { scale: 1.06, opacity: 0, ease: 'power1.inOut', duration: 0.32 }, 0.24)
     .fromTo(ground, { yPercent: 0 }, { yPercent: -100, ease: liftEase, duration: LIFT[1] - LIFT[0] }, LIFT[0])
     // hold on the light frame so the scrub lag never shows a remnant of the hero when the pin lets go (and keep the
     // timeline exactly 1 long, so its time is the scroll progress the nav reads above)
     .to({}, { duration: 1 - LIFT[1] }, LIFT[1]);
+
+  // ---- The flight: the mark lifts off its floor, sweeps across the screen while the curtain lifts, and comes down to
+  //      the end of the manifesto's last line (.manifesto__seat), as large as its capitals. From there it stays with
+  //      the line and leaves with the page. Driven by the scroll (eased a little, so a coarse wheel still glides).
+  const seat = document.querySelector('.manifesto__seat');
+  const LAND = 0.46; // where it lands in the manifesto's own timeline (sections.js), just after the last line rose
+  const smooth = (a, b, v) => { const t = gsap.utils.clamp(0, 1, (v - a) / (b - a)); return t * t * (3 - 2 * t); };
+  // the path in screen fractions: off its floor up to the right, across to the left, then down into the seat
+  const WAY = window.matchMedia('(max-width: 760px)').matches
+    ? [[0.72, 0.3, 0.8], [0.3, 0.44, 0.55]]
+    : [[0.73, 0.34, 0.78], [0.28, 0.5, 0.5]];
+  const catmull = (a, b, c, d, t) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
+  function along(pts, u, k) {
+    const n = pts.length - 1;
+    const i = Math.min(n - 1, Math.floor(u * n));
+    const t = u * n - i;
+    const at = (j) => pts[gsap.utils.clamp(0, n, j)][k];
+    return catmull(at(i - 1), at(i), at(i + 1), at(i + 2), t);
+  }
+  let landScroll = 1;
+  const measureLand = () => {
+    const st = ScrollTrigger.getById('manifesto');
+    landScroll = st ? st.start + (st.end - st.start) * LAND : window.innerHeight * 2.4;
+  };
+  ScrollTrigger.addEventListener('refresh', measureLand);
+  let fp = 0; // flight progress as drawn
+  let parked = false;
+  function fly() {
+    if (!bolt) return;
+    fp += (gsap.utils.clamp(0, 1, window.scrollY / landScroll) - fp) * 0.18;
+    if (fp < 0.0005) { bolt.flight(null); return; }
+    const home = bolt.home();
+    const r = seat.getBoundingClientRect();
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const end = [(r.left + r.width / 2) / W, (r.top + r.height / 2) / H, r.height / (home.h * H)];
+    const pts = [[home.x, home.y, 1], ...WAY, end];
+    const u = gsap.parseEase('power1.inOut')(fp);
+    const x = along(pts, u, 0);
+    const y = along(pts, u, 1);
+    const ahead = along(pts, Math.min(1, u + 0.01), 0);
+    bolt.flight({
+      x, y,
+      s: along(pts, u, 2),
+      turn: u * Math.PI * 4, // two full turns on the way, facing you again as it lands
+      bank: gsap.utils.clamp(-0.45, 0.45, -(ahead - x) * 14),
+      idle: 1 - 0.75 * smooth(0, 0.6, fp),
+      refl: 1 - smooth(0, 0.14, fp),
+    });
+    // once it has left the top of the screen with the page, nothing more to draw
+    const away = fp > 0.985 && r.bottom < -40;
+    if (away !== parked) { parked = away; bolt.hold(away); }
+  }
+  gsap.ticker.add(fly);
+
+  // the floor line sits just under the resting mark: the stage's horizon follows it at any screen size
+  boltReady.then((b) => {
+    if (!b?.home) return;
+    document.documentElement.classList.add('flight'); // the seat's flat mark gives way to the flying one
+    const place = () => { const h = b.home(); stage.style.setProperty('--floor', `${((h.y + h.h / 2 + 0.035) * 100).toFixed(2)}%`); };
+    place();
+    new ResizeObserver(place).observe(mark);
+  });
 
   // ---- Entrance (after the intro, or immediately on return visits)
   function enter() {

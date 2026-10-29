@@ -337,19 +337,49 @@ img { display: block; max-width: 100%; }
     radial-gradient(closest-side at 42% 62%, rgba(252, 57, 206, 0.38), transparent 70%);
   filter: blur(30px);
 }
-.hero__shadow {
-  /* contact shadow under the floating bolt */
-  position: absolute; left: 50%; top: calc(50% + 24vh); width: 22vh; height: 3.2vh; margin-left: -11vh;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(0, 1, 18, 0.85), rgba(40, 10, 90, 0.35) 55%, transparent 100%);
-  filter: blur(6px);
-  animation: shadow-breathe 8.4s ease-in-out infinite;
+/* The mark itself lives over the page (it leaves the hero for the manifesto): a fixed layer the size of the screen,
+   under the menu. Without WebGL or with reduced motion the flat mark in the hero and in the manifesto stand in. */
+.mark { position: fixed; left: 0; top: 0; z-index: 40; width: 100%; height: 100svh; pointer-events: none; }
+.mark__gl { display: block; width: 100%; height: 100%; opacity: 0; }
+.no-webgl .mark, .reduce-motion .mark { display: none; }
+
+/* The stage it stands on: a beam of light from above, a lacquered floor under a lit horizon, and the pool of colour
+   the mark throws on it. --floor (hero.js) is the line just under the resting mark */
+.hero__set { position: absolute; inset: 0; z-index: 1; pointer-events: none; --floor: 80%; will-change: opacity; }
+.hero__beam {
+  position: absolute; left: 0; right: 0; top: 0; height: var(--floor);
+  /* a cone opening from a point above the screen, its sides soft: no hard edge anywhere */
+  background: conic-gradient(from 0deg at 50% -18%,
+    transparent 0deg 162deg, rgba(196, 186, 255, 0.1) 171deg, rgba(206, 198, 255, 0.17) 180deg,
+    rgba(196, 186, 255, 0.1) 189deg, transparent 198deg 360deg);
+  -webkit-mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, 0.6) 70%, rgba(0, 0, 0, 0.2));
+  mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, 0.6) 70%, rgba(0, 0, 0, 0.2));
 }
-@keyframes shadow-breathe { 0%, 100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(0.88); opacity: 0.65; } }
-.hero__3d { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.hero__floor {
+  position: absolute; left: 0; right: 0; top: var(--floor); bottom: 0;
+  background: linear-gradient(180deg, rgba(10, 8, 52, 0.38), rgba(4, 4, 40, 0.78) 45%, #000229 92%);
+}
+/* the horizon: a hairline of the brand's light, brightest under the mark, gone at the edges */
+.hero__floor::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 6%, rgba(128, 255, 255, 0.28) 30%, rgba(214, 196, 255, 0.75) 50%, rgba(252, 57, 206, 0.32) 70%, transparent 94%);
+}
+/* and the soft sheen of the lacquer just below it */
+.hero__floor::after {
+  content: ""; position: absolute; left: 10%; right: 10%; top: 0; height: 18%;
+  background: radial-gradient(50% 100% at 50% 0%, rgba(160, 150, 255, 0.16), transparent 100%);
+}
+.hero__pool {
+  position: absolute; left: 50%; top: var(--floor); width: 64vh; height: 9vh; transform: translate(-50%, -50%);
+  border-radius: 50%; filter: blur(18px);
+  background:
+    radial-gradient(closest-side at 40% 50%, rgba(252, 57, 206, 0.55), transparent 75%),
+    radial-gradient(closest-side at 62% 50%, rgba(63, 116, 255, 0.55), transparent 75%);
+  animation: pool-breathe 8.4s ease-in-out infinite;
+}
+@keyframes pool-breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; } }
 .hero__fallback { position: relative; height: 40vh; width: auto; opacity: 0; }
 .no-webgl .hero__fallback, .reduce-motion .hero__fallback { opacity: 1; }
-.no-webgl .hero__3d, .reduce-motion .hero__3d { display: none; }
 
 .hero__content {
   position: relative; z-index: 5; height: 100%; will-change: transform, opacity;
@@ -387,7 +417,8 @@ img { display: block; max-width: 100%; }
   .nav__cta { padding: 0 15px; font-size: 12px; }
   .nav__cta svg { display: none; }
   .hero__word-line { font-size: 28vw; transform: translateY(-2vh); }
-  .hero__shadow { top: calc(50% + 8vh); width: 16vh; margin-left: -8vh; }
+  .hero__set { --floor: 62.5%; }
+  .hero__pool { width: 40vh; height: 6vh; }
   .hero__halo { top: 43%; }
   .hero__bottom { grid-template-columns: 1fr; gap: 16px; }
   .hero__scroll { display: none; }

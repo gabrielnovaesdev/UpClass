@@ -5,6 +5,7 @@ import {
   ExtrudeGeometry,
   Float32BufferAttribute,
   Group,
+  Matrix4,
   Mesh,
   MeshPhysicalMaterial,
   NeutralToneMapping,
@@ -140,8 +141,31 @@ export async function buildMark(renderer, svgText) {
   return { model, bolts, face, rim };
 }
 
+// The hero's reflection on its glossy floor: copies of the mark's materials that fade out with the distance below the
+// floor line (world y), so the mirrored bolt dissolves into the floor the way it would on lacquer.
+function reflectionOf(material, uniforms) {
+  const m = material.clone();
+  m.transparent = true;
+  m.depthWrite = false;
+  m.customProgramCacheKey = () => 'upc-reflection';
+  m.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = `varying float vWorldY;\n${shader.vertexShader.replace(
+      '#include <project_vertex>',
+      '#include <project_vertex>\n  vWorldY = (modelMatrix * vec4(transformed, 1.0)).y;',
+    )}`;
+    shader.fragmentShader = `uniform float uFloor;\nuniform float uFade;\nuniform float uAmount;\nvarying float vWorldY;\n${shader.fragmentShader.replace(
+      '#include <dithering_fragment>',
+      '#include <dithering_fragment>\n  gl_FragColor.a *= uAmount * smoothstep(uFloor - uFade, uFloor, vWorldY);',
+    )}`;
+  };
+  return m;
+}
+
 /**
- * mode 'hero'  — floats behind the hero copy, spins with scroll, tilts towards the pointer.
+ * mode 'hero'  — the mark on its stage: it stands over a glossy floor with its reflection, glints as a light circles
+ *                it, tilts towards the pointer, and flies wherever `flight()` sends it (hero.js takes it from the hero
+ *                down into the manifesto). Its host is a fixed layer the size of the screen.
  * mode 'intro' — centred and fully art-directed from outside through `rig` (see intro.js).
  */
 export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
@@ -181,7 +205,24 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
   spin.add(model);
   scene.add(spin);
 
-  const state = { appear: 0, scroll: 0, px: 0, py: 0, tx: 0, ty: 0 };
+  const state = { appear: 0, scroll: 0, px: 0, py: 0, tx: 0, ty: 0, f: null };
+
+  // the reflection (hero only): a mirrored copy of the mark under the floor line, drawn with the fading materials
+  const reflU = { uFloor: { value: 0 }, uFade: { value: 1 }, uAmount: { value: 0 } };
+  let refl = null;
+  if (mode === 'hero') {
+    const swap = new Map([[face, reflectionOf(face, reflU)], [rim, reflectionOf(rim, reflU)]]);
+    refl = model.clone();
+    refl.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = o.material.map((m) => swap.get(m) ?? m);
+      o.castShadow = false;
+      o.receiveShadow = false;
+    });
+    refl.matrixAutoUpdate = false;
+    scene.add(refl);
+  }
+  const mirror = new Matrix4();
   let visibleH = 1;
   let baseY = 0;
   let unit = 1; // world units per svg unit
@@ -195,7 +236,8 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     camera.updateProjectionMatrix();
     visibleH = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360);
     const narrow = w < 760;
-    const frac = mode === 'intro' ? introFrac(w, h) : narrow ? 0.3 : 0.4;
+    const frac = mode === 'intro' ? introFrac(w, h) : narrow ? 0.32 : 0.46;
+    state.frac = frac;
     baseY = mode === 'hero' ? visibleH * (narrow ? 0.07 : -0.035) : 0; // portrait screens lift the hero bolt clear of the copy
     unit = (visibleH * frac) / VB_H;
     model.scale.set(unit, -unit, unit); // svg y-axis points down
@@ -211,12 +253,31 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
       state.px += (state.tx - state.px) * 0.05;
       state.py += (state.ty - state.py) * 0.05;
       const a = state.appear;
-      spin.rotation.y =
-        -0.3 + Math.sin(time * 0.42) * 0.16 + state.px * 0.5 + state.scroll * Math.PI * 2 - (1 - a) * 2.4;
-      spin.rotation.x = Math.sin(time * 0.36) * 0.06 + state.py * 0.28;
-      spin.rotation.z = Math.sin(time * 0.27) * 0.025;
-      spin.position.y = baseY + Math.sin(time * 0.75) * visibleH * 0.012 - state.scroll * visibleH * 0.04;
-      spin.scale.setScalar(0.72 + 0.28 * a);
+      // where the flight has taken it (screen fractions, scale, extra turn and bank); at rest it is home
+      const f = state.f ?? { x: 0.5, y: 0.5 - baseY / visibleH, s: 1, turn: 0, bank: 0, idle: 1, refl: 1 };
+      const idle = f.idle;
+      spin.rotation.y = (-0.3 + Math.sin(time * 0.42) * 0.16 + state.px * 0.5) * idle + f.turn - (1 - a) * 2.4;
+      spin.rotation.x = (Math.sin(time * 0.36) * 0.06 + state.py * 0.28) * idle;
+      spin.rotation.z = Math.sin(time * 0.27) * 0.025 * idle + f.bank;
+      spin.position.x = (f.x - 0.5) * visibleH * camera.aspect;
+      spin.position.y = (0.5 - f.y) * visibleH + Math.sin(time * 0.75) * visibleH * 0.012 * idle;
+      spin.scale.setScalar((0.72 + 0.28 * a) * f.s);
+      // a light slowly circling the mark: its glints travel over the fold and the rim, like a product on a turntable
+      key.position.set(-4 + Math.sin(time * 0.31) * 2.6, 4.5 + Math.cos(time * 0.23) * 1.2, 3.2);
+      rimPink.intensity = 2.2 + Math.sin(time * 0.5) * 0.5;
+      rimBlue.intensity = 2.2 - Math.sin(time * 0.5) * 0.5;
+      // the floor lies a little under the resting mark; the reflection fades with the lift-off
+      const floor = baseY - visibleH * state.frac * 0.5 - visibleH * 0.035;
+      reflU.uFloor.value = floor;
+      reflU.uFade.value = visibleH * state.frac * 0.62;
+      reflU.uAmount.value = 0.42 * f.refl * a;
+      refl.visible = f.refl > 0.001;
+      if (refl.visible) {
+        spin.updateMatrixWorld(true);
+        mirror.set(1, 0, 0, 0, 0, -1, 0, 2 * floor, 0, 0, 1, 0, 0, 0, 0, 1);
+        refl.matrix.multiplyMatrices(mirror, model.matrixWorld);
+        refl.matrixWorldNeedsUpdate = true;
+      }
     }
     renderer.render(scene, camera);
   }
@@ -245,8 +306,13 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
       gsap.to(canvas, { opacity: 1, duration: 0.6, ease: 'power1.out' });
       gsap.to(state, { appear: 1, duration: 2.4, ease: 'expo.out' });
     },
-    scroll(p) {
-      state.scroll = gsap.utils.clamp(0, 1, p / 0.8);
+    /** f: { x, y (centre, fractions of the screen), s (scale), turn, bank (radians), idle (0–1), refl (0–1) }, or null for home. */
+    flight(f) {
+      state.f = f;
+    },
+    /** the resting pose: centre (fraction of the screen) and height (fraction of the screen) at full size. */
+    home() {
+      return { x: 0.5, y: 0.5 - baseY / visibleH, h: state.frac };
     },
     pointer(x, y) {
       state.tx = x;
