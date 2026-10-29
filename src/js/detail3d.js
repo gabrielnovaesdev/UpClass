@@ -7,29 +7,31 @@ import {
   Group,
   HemisphereLight,
   Mesh,
-  MeshBasicMaterial,
   MeshPhysicalMaterial,
   NeutralToneMapping,
   PerspectiveCamera,
   PMREMGenerator,
   Scene,
   Shape,
-  ShapeGeometry,
   SRGBColorSpace,
-  CylinderGeometry,
   WebGLRenderer,
 } from 'three';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { buildMark, VB_H } from './bolt3d.js';
+import { buildMark } from './bolt3d.js';
+import { makeIphone } from './iphone3d.js';
+import { makeBox, makeConstruction, makeCrystal } from './heroes3d.js';
 
 /*
- * The 3D stage of "Detalhes" (detail.js drives it). One canvas over the section holds:
- * - one object per word, rising with it and turning on its own: the mark in pearl (Construção), the mark in its
- *   colours (Dois raios), the two bolts sliding along their arrows (Upgrade) and a phone (Celular);
- * - a field of small brand pieces (bolts, phones, arrows) in frosted pearl, spread in depth: they drift and turn
- *   all the time and slide with the scroll at a speed that depends on their distance, so the space reads as deep.
+ * Two 3D stages that share one look:
+ * - the stage of "Detalhes" (detail.js drives it), a canvas over that section with one object per word, rising with
+ *   it and turning on its own: the Upclass box opening (Procedência), the mark drawn by its construction lines and
+ *   poured into chrome (Precisão), a real iPhone (iPhone) and the two bolts in crystal coming together (Pós-venda);
+ * - the field (flow.js drives it), a canvas in the sky shared by the name, the details, the collection and the
+ *   moments: small brand pieces (bolts, phones, arrows) in frosted pearl, spread in depth. They drift and turn all
+ *   the time and slide with the scroll at a speed that depends on their distance, so the space reads as deep and
+ *   carries on from one section to the next.
  * The light mist of the page is the fog, so the far pieces dissolve into it.
  */
 
@@ -37,31 +39,6 @@ const MIST = 0xdfe0f4;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const smooth = (a, b, v) => { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
 const rand = (() => { let s = 7; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })(); // stable layout
-
-function roundedRect(w, h, r) {
-  const s = new Shape();
-  const x = -w / 2;
-  const y = -h / 2;
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y);
-  s.quadraticCurveTo(x + w, y, x + w, y + r);
-  s.lineTo(x + w, y + h - r);
-  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  s.lineTo(x + r, y + h);
-  s.quadraticCurveTo(x, y + h, x, y + h - r);
-  s.lineTo(x, y + r);
-  s.quadraticCurveTo(x, y, x + r, y);
-  return s;
-}
-
-// a flat rounded panel whose UVs span the whole rectangle (ShapeGeometry would use raw coordinates)
-function panel(w, h, r) {
-  const geo = new ShapeGeometry(roundedRect(w, h, r), 12);
-  const pos = geo.attributes.position;
-  const uv = geo.attributes.uv;
-  for (let i = 0; i < pos.count; i++) uv.setXY(i, pos.getX(i) / w + 0.5, pos.getY(i) / h + 0.5);
-  return geo;
-}
 
 // the phone's screen: the brand's navy with the bolt glowing in the middle and the island on top
 function screenTexture(boltImg) {
@@ -103,36 +80,6 @@ function loadImage(src) {
   });
 }
 
-function makePhone(boltImg) {
-  const W = 0.78;
-  const H = 1.6;
-  const D = 0.085;
-  const phone = new Group();
-  const frame = new MeshPhysicalMaterial({ color: 0xd9d5ef, metalness: 0.9, roughness: 0.26, clearcoat: 0.6, clearcoatRoughness: 0.2 });
-  phone.add(new Mesh(new RoundedBoxGeometry(W, H, D, 6, 0.11), frame));
-  const screen = new Mesh(panel(W - 0.06, H - 0.06, 0.085), new MeshBasicMaterial({ map: screenTexture(boltImg), toneMapped: false }));
-  screen.position.z = D / 2 + 0.002;
-  phone.add(screen);
-  // the back: frosted glass in the brand's lilac, a camera plateau with three lenses
-  const back = new Mesh(panel(W - 0.05, H - 0.05, 0.09), new MeshPhysicalMaterial({ color: 0xbdb6ee, roughness: 0.45, clearcoat: 0.5, iridescence: 0.35 }));
-  back.position.z = -D / 2 - 0.002;
-  back.rotation.y = Math.PI;
-  phone.add(back);
-  const plateau = new Mesh(new RoundedBoxGeometry(0.34, 0.34, 0.03, 4, 0.06), new MeshPhysicalMaterial({ color: 0xcfc9f3, metalness: 0.4, roughness: 0.3, clearcoat: 1 }));
-  plateau.position.set(0.17, 0.55, -D / 2 - 0.012);
-  phone.add(plateau);
-  const lensMat = new MeshPhysicalMaterial({ color: 0x0b0c2a, metalness: 0.3, roughness: 0.08, clearcoat: 1 });
-  const lensGeo = new CylinderGeometry(0.058, 0.058, 0.04, 28);
-  [[0.1, 0.62], [0.1, 0.48], [0.24, 0.55]].forEach(([x, y]) => {
-    const l = new Mesh(lensGeo, lensMat);
-    l.rotation.x = Math.PI / 2;
-    l.position.set(x, y, -D / 2 - 0.03);
-    phone.add(l);
-  });
-  phone.userData.height = H;
-  return phone;
-}
-
 function centred(geo) {
   geo.computeBoundingBox();
   const b = geo.boundingBox;
@@ -156,7 +103,8 @@ function pieceGeometries(svgText) {
   return [bolt, phone, arrow];
 }
 
-export async function createDetailStage(canvas, host, svgText, { lite = false } = {}) {
+// renderer, camera, mist and the brand's lights: what both stages share
+function baseStage(canvas, host, lite) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lite ? 1.5 : 1.75));
   renderer.toneMapping = NeutralToneMapping;
@@ -177,30 +125,105 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
   rimBlue.position.set(6, 4, -3);
   scene.add(new HemisphereLight(0xffffff, new Color(MIST), 0.9), key, rimPink, rimBlue);
 
-  // ---- the four protagonists
-  const [colour, upgrade, pearl, boltImg] = await Promise.all([
-    buildMark(renderer, svgText),
+  const view = { visibleH: 1, aspect: 1, hostH: 1 };
+  function resize() {
+    const w = host.clientWidth;
+    const h = host.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = view.aspect = w / h;
+    camera.updateProjectionMatrix();
+    view.visibleH = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360);
+    view.hostH = h;
+  }
+  resize();
+
+  // the camera leans a little towards the pointer
+  const ptr = { x: 0, y: 0, tx: 0, ty: 0 };
+  function lean() {
+    ptr.x += (ptr.tx - ptr.x) * 0.04;
+    ptr.y += (ptr.ty - ptr.y) * 0.04;
+    camera.position.x = ptr.x * 0.6;
+    camera.position.y = -ptr.y * 0.4;
+    camera.lookAt(0, 0, 0);
+  }
+
+  return {
+    renderer, scene, camera, view, resize, lean,
+    pointer(x, y) { ptr.tx = x; ptr.ty = y; },
+    dispose() {
+      renderer.dispose();
+      renderer.forceContextLoss();
+    },
+  };
+}
+
+export async function createDetailStage(canvas, host, svgText, { lite = false } = {}) {
+  const base = baseStage(canvas, host, lite);
+  const { renderer, scene, camera, view } = base;
+
+  // ---- the four protagonists, in the order of the words (heroes3d.js, iphone3d.js)
+  const [precision, crystal, boltImg] = await Promise.all([
     buildMark(renderer, svgText),
     buildMark(renderer, svgText),
     loadImage('/img/bolt-art-700.webp'),
   ]);
-  // Construção: the mark in polished chrome with a pearly film, like a precision part
-  const pearlMat = new MeshPhysicalMaterial({
-    color: 0xe4e0fb, roughness: 0.14, metalness: 1, clearcoat: 1, clearcoatRoughness: 0.06,
-    iridescence: 0.55, iridescenceIOR: 1.4, iridescenceThicknessRange: [220, 560], envMapIntensity: 1.6,
-  });
-  pearl.model.traverse((m) => { if (m.isMesh) m.material = pearlMat; });
-  const phone = makePhone(boltImg);
-  const heroes = [pearl.model, colour.model, upgrade.model, phone].map((obj, i) => {
+  const phone = makeIphone(screenTexture(boltImg));
+  const heroes = [
+    makeBox(boltImg), // Procedência
+    makeConstruction(precision), // Precisão
+    { obj: phone, height: phone.userData.height, svg: false }, // iPhone
+    makeCrystal(crystal), // Pós-venda
+  ].map((hero) => {
     const holder = new Group();
-    holder.add(obj);
-    holder.userData = { obj, height: i === 3 ? phone.userData.height : VB_H, svg: i < 3 };
+    holder.add(hero.obj);
+    holder.userData = hero;
     holder.visible = false;
     scene.add(holder);
     return holder;
   });
 
-  // ---- the field of small pieces
+  return {
+    resize: base.resize,
+    pointer: base.pointer,
+    dispose: base.dispose,
+    /** c: the scroll cursor (index of the word at the centre, fractional); slot: pixels between two words; t: seconds. */
+    frame(c, slot, t) {
+      const { visibleH, aspect, hostH } = view;
+      const pxToWorld = visibleH / hostH;
+      const narrow = aspect < 0.8;
+      const objH = visibleH * (narrow ? 0.2 : 0.3);
+      base.lean();
+
+      let any = false;
+      heroes.forEach((holder, i) => {
+        const d = i - c;
+        // pops in as its word reaches the middle, stays with it on the way up, then lets go
+        const show = smooth(0.62, 0.1, d) * smooth(-1.6, -1.0, d);
+        holder.visible = show > 0.002;
+        if (!holder.visible) return;
+        any = true;
+        const grow = 1 - Math.pow(1 - show, 3);
+        const unit = objH / holder.userData.height;
+        holder.userData.obj.scale.set(unit, holder.userData.svg ? -unit : unit, unit);
+        holder.scale.setScalar(0.35 + 0.65 * grow);
+        holder.position.set(0, -d * slot * pxToWorld + (narrow ? 0.035 : 0.02) * visibleH, 0.8);
+        holder.rotation.y = t * 0.55 + i * 1.3 + (1 - grow) * 2.2;
+        holder.rotation.x = Math.sin(t * 0.5 + i) * 0.14;
+        holder.rotation.z = Math.sin(t * 0.37 + i * 2) * 0.05;
+        holder.userData.animate?.(t, grow);
+      });
+      // nothing on stage: one last clear, then no more draws until a word brings its object back
+      if (any || base.drawn) renderer.render(scene, camera);
+      base.drawn = any;
+    },
+  };
+}
+
+export function createField(canvas, host, svgText, { lite = false } = {}) {
+  const base = baseStage(canvas, host, lite);
+  const { renderer, scene, camera, view } = base;
+
   const geos = pieceGeometries(svgText);
   // frosted pearl: lit from inside a little, so no face ever turns grey against the mist
   const glass = new MeshPhysicalMaterial({
@@ -225,61 +248,15 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
     pieces.push(m);
   }
 
-  let visibleH = 1;
-  let aspect = 1;
-  let hostH = 1;
-  function resize() {
-    const w = host.clientWidth;
-    const h = host.clientHeight;
-    if (!w || !h) return;
-    renderer.setSize(w, h, false);
-    camera.aspect = aspect = w / h;
-    camera.updateProjectionMatrix();
-    visibleH = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360);
-    hostH = h;
-  }
-  resize();
-
-  const ptr = { x: 0, y: 0, tx: 0, ty: 0 };
   return {
-    resize,
-    pointer(x, y) { ptr.tx = x; ptr.ty = y; },
-    /**
-     * c: the scroll cursor (index of the word at the centre, fractional); slot: pixels between two words;
-     * t: seconds; scrolled: pixels scrolled through the section (for the field's parallax).
-     */
-    frame(c, slot, t, scrolled) {
+    resize: base.resize,
+    pointer: base.pointer,
+    dispose: base.dispose,
+    /** t: seconds; scrolled: pixels scrolled through the whole flow (for the parallax). */
+    frame(t, scrolled) {
+      const { visibleH, aspect, hostH } = view;
       const pxToWorld = visibleH / hostH;
-      const narrow = aspect < 0.8;
-      const objH = visibleH * (narrow ? 0.2 : 0.3);
-      ptr.x += (ptr.tx - ptr.x) * 0.04;
-      ptr.y += (ptr.ty - ptr.y) * 0.04;
-      camera.position.x = ptr.x * 0.6;
-      camera.position.y = -ptr.y * 0.4;
-      camera.lookAt(0, 0, 0);
-
-      heroes.forEach((holder, i) => {
-        const d = i - c;
-        // pops in as its word reaches the middle, stays with it on the way up, then lets go
-        const show = smooth(0.62, 0.1, d) * smooth(-1.6, -1.0, d);
-        holder.visible = show > 0.002;
-        if (!holder.visible) return;
-        const grow = 1 - Math.pow(1 - show, 3);
-        const unit = objH / holder.userData.height;
-        holder.userData.obj.scale.set(unit, holder.userData.svg ? -unit : unit, unit);
-        holder.scale.setScalar(0.35 + 0.65 * grow);
-        holder.position.set(0, -d * slot * pxToWorld + (narrow ? 0.035 : 0.02) * visibleH, 0.8);
-        holder.rotation.y = t * 0.55 + i * 1.3 + (1 - grow) * 2.2;
-        holder.rotation.x = Math.sin(t * 0.5 + i) * 0.14;
-        holder.rotation.z = Math.sin(t * 0.37 + i * 2) * 0.05;
-        if (i === 2) {
-          // the arrows built into the bolts: the upper one goes up, the lower one goes down, and back
-          const k = Math.sin(t * 1.6) * 0.5 + 0.5;
-          upgrade.bolts[0].position.y = upgrade.bolts[0].userData.home.y - k * 46;
-          upgrade.bolts[1].position.y = upgrade.bolts[1].userData.home.y + k * 46;
-        }
-      });
-
+      base.lean();
       const spanY = visibleH * 1.9;
       pieces.forEach((m) => {
         const u = m.userData;
@@ -290,10 +267,6 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
         m.rotation.set(u.rx + t * 0.3 * u.vy, u.ry + t * 0.4 * (u.vx + 0.3), Math.sin(t * 0.3 + u.ry) * 0.4);
       });
       renderer.render(scene, camera);
-    },
-    dispose() {
-      renderer.dispose();
-      renderer.forceContextLoss();
     },
   };
 }

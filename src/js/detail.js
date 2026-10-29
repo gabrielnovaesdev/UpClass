@@ -7,7 +7,8 @@ import { canRunGL } from './evo-section.js';
  * 04 · Detalhes — what the mark means, word by word (after Noomo's "Digital made human").
  * The section pins and the words climb through it in perspective, at the same pace as the page, so the pin never
  * feels like a stop: far words lean back in a cool grey, the one in the middle stands in full ink with its line of
- * text, and receives its own 3D object (detail3d.js). Small brand pieces keep drifting in depth all the time.
+ * text, and receives its own 3D object (detail3d.js). The small brand pieces drifting around it belong to the sky
+ * shared with the neighbouring sections (flow.js).
  * Without WebGL, on weak devices and with reduced motion it stays a calm, static list (see the CSS).
  */
 
@@ -80,7 +81,7 @@ export function initDetail({ reduce, finePointer }) {
     // the 3D field fades at the section's edges instead of being cut by them
     const rTop = top - window.scrollY;
     canvas.style.opacity = gsap.utils.clamp(0, 1, Math.min((H - rTop) / (H * 0.5), (rTop + height) / (H * 0.5))).toFixed(3);
-    stage?.frame(c, slot, time, (c - START) * slot);
+    stage?.frame(c, slot, time);
   }
 
   // runs only while the section is on screen

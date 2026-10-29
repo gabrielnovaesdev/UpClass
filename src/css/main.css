@@ -51,6 +51,36 @@
     radial-gradient(56% 62% at 94% 96%, rgba(128, 255, 255, 0.15), rgba(128, 255, 255, 0.06) 50%, rgba(128, 255, 255, 0) 100%);
 }
 
+/* The same mist, as one sky for several sections in a row (.flow): it is held to the screen while they scroll
+   through it, so the glows never restart at a section's edge and the space reads as one. The glows drift slowly
+   with the scroll and the brand pieces float in it (flow.js). */
+.flow { position: relative; color: var(--ink); background-color: var(--mist); }
+.flow > section { position: relative; z-index: 1; }
+.flow__sky {
+  position: sticky; top: 0; z-index: 0; height: 100svh; margin-bottom: -100svh;
+  overflow: hidden; pointer-events: none;
+}
+.flow__sky::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .6 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* each glow is the matching layer of .atmo, as an element of its own so it can move */
+.flow__glow { position: absolute; will-change: transform; }
+.flow__glow--warm {
+  left: 16vw; top: -16svh; width: 92vw; height: 112svh;
+  background: radial-gradient(closest-side, rgba(255, 224, 237, 0.8), rgba(255, 224, 237, 0.34) 45%, rgba(255, 224, 237, 0));
+}
+.flow__glow--pink {
+  left: -46vw; top: 26svh; width: 112vw; height: 124svh;
+  background: radial-gradient(closest-side, rgba(252, 57, 206, 0.05), rgba(252, 57, 206, 0.02) 50%, rgba(252, 57, 206, 0));
+}
+.flow__glow--cool {
+  left: 38vw; top: 34svh; width: 112vw; height: 124svh;
+  background: radial-gradient(closest-side, rgba(128, 255, 255, 0.15), rgba(128, 255, 255, 0.06) 50%, rgba(128, 255, 255, 0));
+}
+.flow__gl { display: none; position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; }
+.flow.is-gl .flow__gl { display: block; }
+
 *,
 *::before,
 *::after { box-sizing: border-box; }

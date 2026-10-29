@@ -5,11 +5,13 @@ import { applyContacts } from './config.js';
 import { lazyVideos } from './video.js';
 import { canRunGL, evolutionFlat, evolutionStage, filmControls } from './evo-section.js';
 import { initDetail } from './detail.js';
+import { initFlow } from './flow.js';
 import { initMorph } from './morph.js';
 
 // Rhythm of the page: strong moments (film, details, collection, upgrade, belong) alternate with calm ones
-// (manifesto, name, moments, values) so the motion leads the eye without crowding it. The calm sections, the details,
-// the collection and the footer share one light ground (.atmo), so they read as one continuous space.
+// (manifesto, name, moments, values) so the motion leads the eye without crowding it. The name, the details, the
+// collection and the moments share one sky (.flow, see flow.js); the other light sections and the footer use the
+// same mist (.atmo), so they read as one continuous space.
 export function initSections({ reduce, lenis, finePointer }) {
   applyContacts();
   const videos = lazyVideos({ reduce });
@@ -23,6 +25,7 @@ export function initSections({ reduce, lenis, finePointer }) {
   footerBasics({ lenis, reduce });
   initMorph({ reduce });
   if (finePointer) momentsCursor();
+  initFlow({ reduce, finePointer });
   if (reduce) return;
 
   manifesto();
@@ -81,7 +84,7 @@ function name(wide) {
   gsap.set(defs, { autoAlpha: 0, y: 20 });
   gsap.timeline({
     scrollTrigger: wide
-      ? { trigger: '.name__pin', start: 'top top', end: '+=120%', pin: true, scrub: 0.6 }
+      ? { trigger: '.name__pin', start: 'top top', end: '+=150%', pin: true, scrub: 0.6 }
       : { trigger: '.name__pin', start: 'top 70%', end: 'bottom 60%', scrub: 0.6 },
   })
     .fromTo(up, { xPercent: -45 }, { xPercent: 0, ease: 'power3.inOut', duration: 1 }, 0)
@@ -91,39 +94,45 @@ function name(wide) {
     .to({}, { duration: 0.2 });
 }
 
-/* ---- 05 Collection: frosted cards drift across the title in depth (Noomo).
-   The section pins; the cards travel from right to left at the pace of the scroll, each on its own lane, turned a
-   little towards the middle of the screen, and keep floating (a slow sway) even when the scroll stops. They pass
-   in front of the title and their glass blurs it. Reduced motion keeps the static row (see the CSS). */
+/* ---- 05 Collection: frosted cards fly an arc across the title in depth (Noomo).
+   The section pins; at the pace of the scroll the cards rise one after the other from the lower right corner, arc
+   over the middle of the screen and go down towards the lower left, banking along the curve, turned a little
+   towards the middle of the screen and a touch larger at the top of the arc. They keep floating (a slow sway) even
+   when the scroll stops, pass in front of the title and their glass blurs it. Reduced motion keeps the static row
+   (see the CSS). */
 function collection(wide) {
   const section = document.querySelector('.collection');
   const pin = section.querySelector('.collection__pin');
   const cards = [...section.querySelectorAll('.card')];
   section.classList.add('is-live');
-  // vertical lane of each card (its centre, as a fraction of the screen height)
-  const LANES = wide ? [0.63, 0.5, 0.69, 0.54, 0.64] : [0.52, 0.44, 0.58, 0.47, 0.54];
+  // distance between two cards along the arc (0 … 1 is one full crossing) and the height of its top (card centre)
+  const GAP = wide ? 0.21 : 0.46;
+  const APEX = wide ? 0.58 : 0.6;
+  const SPAN = 1 + (cards.length - 1) * GAP; // the first card enters at 0, the last one has left at SPAN
   let W = 1;
   let H = 1;
   let cw = 1;
   let ch = [];
-  let step = 1;
+  // the arc: a quadratic curve from just off the lower right corner, over the middle, to just off the lower left
+  const P = { x0: 0, x1: 0, x2: 0, y0: 0, y1: 0 };
   const measure = () => {
     W = pin.clientWidth;
     H = pin.clientHeight;
     cw = cards[0].offsetWidth;
     ch = cards.map((c) => c.offsetHeight);
-    step = cw * (wide ? 1.32 : 1.16);
+    P.x0 = W + cw * 0.75;
+    P.x1 = W / 2;
+    P.x2 = -cw * 0.75;
+    P.y0 = H + Math.max(...ch) * 0.7;
+    P.y1 = 2 * H * APEX - P.y0; // puts the top of the curve (its middle) at APEX
   };
   measure();
-  // the first card enters from the right edge; the last one ends past the middle, over the title
-  const from = () => W + cw * 0.15;
-  const to = () => W * (wide ? 0.42 : 0.14) - (cards.length - 1) * step;
-  const travel = () => from() - to();
+  const travel = () => (P.x0 - P.x2) * SPAN;
 
   const st = ScrollTrigger.create({
     trigger: pin,
     start: 'top top',
-    end: () => `+=${travel() * (wide ? 1.05 : 1.3)}`,
+    end: () => `+=${travel() * (wide ? 0.85 : 1.25)}`,
     pin: true,
     invalidateOnRefresh: true,
     onRefresh: measure,
@@ -135,18 +144,26 @@ function collection(wide) {
     const prev = p;
     p += (st.progress - p) * 0.12;
     vel += ((p - prev) * travel() - vel) * 0.1; // px per frame, smoothed: the cards lean into the motion
-    const x0 = from() + (to() - from()) * p;
     const lean = gsap.utils.clamp(-10, 10, vel * 0.5);
     cards.forEach((card, i) => {
-      const x = x0 + i * step;
-      if (x > W + 40 || x < -cw - 40) { card.style.visibility = 'hidden'; return; }
+      const s = p * SPAN - i * GAP;
+      if (s <= 0 || s >= 1) { card.style.visibility = 'hidden'; return; }
       card.style.visibility = '';
-      const cx = (x + cw / 2) / W - 0.5; // -0.5 … 0.5 across the screen
-      const y = H * LANES[i] - ch[i] / 2 + Math.sin(time * 0.7 + i * 1.7) * H * 0.012;
+      const u = 1 - s;
+      const bx = u * u * P.x0 + 2 * u * s * P.x1 + s * s * P.x2;
+      const by = (u * u + s * s) * P.y0 + 2 * u * s * P.y1;
+      // direction of travel: banks the card up while it climbs and down while it falls
+      const dx = 2 * u * (P.x1 - P.x0) + 2 * s * (P.x2 - P.x1);
+      const dy = 2 * (u - s) * (P.y1 - P.y0);
+      const bank = (Math.atan2(-dy, -dx) * 180) / Math.PI;
+      const x = bx - cw / 2;
+      const y = by - ch[i] / 2 + Math.sin(time * 0.7 + i * 1.7) * H * 0.012;
+      const cx = bx / W - 0.5; // -0.5 … 0.5 across the screen
       const ry = -cx * 34 + lean;
       const rx = Math.cos(time * 0.5 + i * 1.3) * 3;
-      const rz = (i % 2 ? -2.4 : 2) + Math.sin(time * 0.45 + i) * 1.4;
-      card.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) perspective(1100px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg)`;
+      const rz = bank * 0.2 + Math.sin(time * 0.45 + i) * 1.4;
+      const k = 0.9 + 0.12 * Math.sin(Math.PI * s);
+      card.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) perspective(1100px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg) scale(${k.toFixed(3)})`;
       card.style.setProperty('--ex', `${ry > 0 ? -3 : 3}px`);
     });
   }
@@ -171,7 +188,7 @@ function collection(wide) {
 /* ---- 06 Moments: calm rows; the picture follows the cursor on desktop */
 function moments() {
   gsap.from('.moments__title', {
-    yPercent: 25, autoAlpha: 0, duration: 1.4, ease: 'expo.out',
+    yPercent: 25, autoAlpha: 0, filter: 'blur(12px)', duration: 1.6, ease: 'expo.out', clearProps: 'filter',
     scrollTrigger: { trigger: '.moments__head', start: 'top 80%', once: true },
   });
   document.querySelectorAll('.moment').forEach((row) => {
