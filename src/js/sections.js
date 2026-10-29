@@ -4,10 +4,12 @@ import { SplitText } from 'gsap/SplitText';
 import { applyContacts } from './config.js';
 import { lazyVideos } from './video.js';
 import { canRunGL, evolutionFlat, evolutionStage, filmControls } from './evo-section.js';
-import { initSymbol } from './symbol.js';
+import { initDetail } from './detail.js';
+import { initMorph } from './morph.js';
 
-// Rhythm of the page: strong moments (film, symbol, collection, upgrade, belong) alternate with calm ones
-// (manifesto, name, moments, values) so the motion leads the eye without crowding it.
+// Rhythm of the page: strong moments (film, details, collection, upgrade, belong) alternate with calm ones
+// (manifesto, name, moments, values) so the motion leads the eye without crowding it. The calm sections, the details,
+// the collection and the footer share one light ground (.atmo), so they read as one continuous space.
 export function initSections({ reduce, lenis, finePointer }) {
   applyContacts();
   const videos = lazyVideos({ reduce });
@@ -18,13 +20,14 @@ export function initSections({ reduce, lenis, finePointer }) {
   const evoGL = !reduce && finePointer && window.matchMedia('(min-width: 761px)').matches && canRunGL();
   if (evoGL) evolutionStage({ videos }).catch(() => document.querySelector('.evo').classList.remove('is-gl'));
   else evolutionFlat({ reduce });
-  // the symbol: a pinned 3D anatomy on desktop, chapter buttons everywhere (see symbol.js)
-  initSymbol({ reduce, lenis, wide: window.matchMedia('(min-width: 761px)').matches });
-  footerBasics({ lenis, reduce, finePointer, videos });
+  footerBasics({ lenis, reduce });
+  initMorph({ reduce });
   if (finePointer) momentsCursor();
   if (reduce) return;
 
   manifesto();
+  // the details pin (see detail.js) is created here; ScrollTrigger.sort() below puts it back in page order
+  initDetail({ reduce, finePointer });
   values();
   bento();
   moments();
@@ -33,22 +36,28 @@ export function initSections({ reduce, lenis, finePointer }) {
   mm.add({ wide: '(min-width: 761px)', narrow: '(max-width: 760px)' }, (ctx) => {
     const wide = ctx.conditions.wide;
     name(wide);
-    if (wide) collection();
-    else collectionNarrow();
+    const undoCollection = collection(wide);
     upgrade(wide, videos);
     belong(wide);
     closing();
     footerEnter();
+    return undoCollection;
   });
-  // the symbol pin was created before the manifesto and name pins above it: refresh them in page order
+  // pins were created out of page order (the name pin after the details pin): refresh them top to bottom
   ScrollTrigger.sort();
 }
 
-/* ---- 01 Manifesto: the sentence sharpens word by word as you scroll (Lia) */
+/* ---- 01 Manifesto: the sentence sharpens word by word as you scroll (Lia).
+   It starts under the pinned hero: while it rises, its inner layer is held to the screen, so when the hero's dark
+   ground lifts the manifesto is already there, and its title drifts down from above into place (Noomo). */
 function manifesto() {
+  const inner = document.querySelector('.manifesto__inner');
   const title = document.querySelector('.manifesto__title');
   const note = document.querySelector('.manifesto__note');
   const pillars = document.querySelectorAll('.manifesto__pillars li');
+  const handOver = { trigger: '.manifesto', end: 'top top', invalidateOnRefresh: true };
+  gsap.fromTo(inner, { y: () => -window.innerHeight }, { y: 0, ease: 'none', scrollTrigger: { ...handOver, start: 'top bottom', scrub: true } });
+  gsap.fromTo(title, { y: () => -window.innerHeight * 0.42 }, { y: 0, ease: 'power2.out', scrollTrigger: { ...handOver, start: 'top 85%', scrub: 0.6 } });
   // split inside the accent too, so the gradient word resolves with the rest
   const words = SplitText.create(title, { type: 'words', wordsClass: 'word' }).words;
   const narrow = window.matchMedia('(max-width: 760px)').matches;
@@ -82,61 +91,81 @@ function name(wide) {
     .to({}, { duration: 0.2 });
 }
 
-/* ---- 05 Collection: a pinned track of glass cards turning in 3D over outlined type (Lia) */
-function collection() {
-  const pin = document.querySelector('.collection__pin');
-  const track = document.querySelector('.collection__track');
-  const cards = [...track.children];
-  const marquee = document.querySelector('.collection__marquee');
-  const head = document.querySelector('.collection__head');
-
-  const distance = () => {
-    const last = cards[cards.length - 1];
-    const lastCentre = last.offsetLeft + last.offsetWidth / 2;
-    return lastCentre - window.innerWidth / 2;
+/* ---- 05 Collection: frosted cards drift across the title in depth (Noomo).
+   The section pins; the cards travel from right to left at the pace of the scroll, each on its own lane, turned a
+   little towards the middle of the screen, and keep floating (a slow sway) even when the scroll stops. They pass
+   in front of the title and their glass blurs it. Reduced motion keeps the static row (see the CSS). */
+function collection(wide) {
+  const section = document.querySelector('.collection');
+  const pin = section.querySelector('.collection__pin');
+  const cards = [...section.querySelectorAll('.card')];
+  section.classList.add('is-live');
+  // vertical lane of each card (its centre, as a fraction of the screen height)
+  const LANES = wide ? [0.63, 0.5, 0.69, 0.54, 0.64] : [0.52, 0.44, 0.58, 0.47, 0.54];
+  let W = 1;
+  let H = 1;
+  let cw = 1;
+  let ch = [];
+  let step = 1;
+  const measure = () => {
+    W = pin.clientWidth;
+    H = pin.clientHeight;
+    cw = cards[0].offsetWidth;
+    ch = cards.map((c) => c.offsetHeight);
+    step = cw * (wide ? 1.32 : 1.16);
   };
+  measure();
+  // the first card enters from the right edge; the last one ends past the middle, over the title
+  const from = () => W + cw * 0.15;
+  const to = () => W * (wide ? 0.42 : 0.14) - (cards.length - 1) * step;
+  const travel = () => from() - to();
 
-  // each card turns according to how far it sits from the centre of the screen
-  function turn() {
-    const mid = window.innerWidth / 2;
-    for (const card of cards) {
-      const r = card.getBoundingClientRect();
-      const d = gsap.utils.clamp(-1.6, 1.6, (r.left + r.width / 2 - mid) / mid);
-      card.style.transform = `translateZ(${-Math.abs(d) * 140}px) rotateY(${d * -26}deg) scale(${1 - Math.abs(d) * 0.06})`;
-      card.firstElementChild.style.setProperty('--sheen', `${d * 70}%`);
-    }
+  const st = ScrollTrigger.create({
+    trigger: pin,
+    start: 'top top',
+    end: () => `+=${travel() * (wide ? 1.05 : 1.3)}`,
+    pin: true,
+    invalidateOnRefresh: true,
+    onRefresh: measure,
+  });
+
+  let p = 0;
+  let vel = 0;
+  function frame(time) {
+    const prev = p;
+    p += (st.progress - p) * 0.12;
+    vel += ((p - prev) * travel() - vel) * 0.1; // px per frame, smoothed: the cards lean into the motion
+    const x0 = from() + (to() - from()) * p;
+    const lean = gsap.utils.clamp(-10, 10, vel * 0.5);
+    cards.forEach((card, i) => {
+      const x = x0 + i * step;
+      if (x > W + 40 || x < -cw - 40) { card.style.visibility = 'hidden'; return; }
+      card.style.visibility = '';
+      const cx = (x + cw / 2) / W - 0.5; // -0.5 … 0.5 across the screen
+      const y = H * LANES[i] - ch[i] / 2 + Math.sin(time * 0.7 + i * 1.7) * H * 0.012;
+      const ry = -cx * 34 + lean;
+      const rx = Math.cos(time * 0.5 + i * 1.3) * 3;
+      const rz = (i % 2 ? -2.4 : 2) + Math.sin(time * 0.45 + i) * 1.4;
+      card.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) perspective(1100px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg)`;
+      card.style.setProperty('--ex', `${ry > 0 ? -3 : 3}px`);
+    });
   }
-
-  gsap.timeline({
-    scrollTrigger: {
-      trigger: pin,
-      start: 'top top',
-      end: () => `+=${distance() * 1.1}`,
-      pin: true,
-      scrub: 0.6,
-      invalidateOnRefresh: true,
-      onUpdate: turn,
-      onRefresh: turn,
-    },
-  })
-    .to(track, { x: () => -distance(), ease: 'none', duration: 1 }, 0)
-    .to(marquee, { xPercent: -38, ease: 'none', duration: 1 }, 0)
-    .to('.collection__progress i', { scaleX: 1, ease: 'none', duration: 1 }, 0)
-    .to(head, { autoAlpha: 0, y: -20, ease: 'power1.in', duration: 0.25 }, 0.3);
-
-  gsap.from(cards, {
-    y: 60, autoAlpha: 0, duration: 1.2, ease: 'expo.out', stagger: 0.08,
-    scrollTrigger: { trigger: pin, start: 'top 70%', once: true },
+  let running = false;
+  const io = new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !running) { running = true; gsap.ticker.add(frame); }
+    else if (!e.isIntersecting && running) { running = false; gsap.ticker.remove(frame); }
   });
-  turn();
-}
+  io.observe(section);
+  frame(0);
 
-// touch screens keep native horizontal swiping; only the outlined type drifts with the page
-function collectionNarrow() {
-  gsap.to('.collection__marquee', {
-    xPercent: -45, ease: 'none',
-    scrollTrigger: { trigger: '.collection', start: 'top bottom', end: 'bottom top', scrub: true },
-  });
+  // matchMedia revert (crossing 760 px): back to a clean state before the other layout builds its own
+  return () => {
+    io.disconnect();
+    gsap.ticker.remove(frame);
+    st.kill();
+    section.classList.remove('is-live');
+    cards.forEach((c) => { c.style.transform = ''; c.style.visibility = ''; });
+  };
 }
 
 /* ---- 06 Moments: calm rows; the picture follows the cursor on desktop */
@@ -313,22 +342,15 @@ function closing() {
     .to(copy, { scale: 0.9, yPercent: -8, autoAlpha: 0, ease: 'power1.in', duration: 0.9 }, 0.1);
 }
 
-/* ---- Footer: the card settles onto the paper; the mark resolves out of light inside it */
+/* ---- Footer: its lines settle as it rises over the call to action */
 function footerEnter() {
-  const card = document.querySelector('.footer__card');
-  gsap.fromTo(card, { scale: 0.92 }, {
-    scale: 1, ease: 'none',
-    scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'top top', scrub: 0.6 },
-  });
-  gsap.from(['.footer__title', '.footer__channels li'], {
-    y: 40, autoAlpha: 0, duration: 1.3, ease: 'expo.out', stagger: 0.08,
+  gsap.from(['.footer__title', '.footer__channels li', '.footer__cols > *', '.footer__bottom > *'], {
+    y: 34, autoAlpha: 0, duration: 1.3, ease: 'expo.out', stagger: 0.05,
     scrollTrigger: { trigger: '.footer', start: 'top 55%', once: true },
   });
 }
 
-function footerBasics({ lenis, reduce, finePointer, videos }) {
-  const card = document.querySelector('.footer__card');
-  const video = document.querySelector('.footer__video');
+function footerBasics({ lenis, reduce }) {
   document.querySelector('.footer__year').textContent = new Date().getFullYear();
 
   // local time at the store
@@ -342,29 +364,4 @@ function footerBasics({ lenis, reduce, finePointer, videos }) {
     if (lenis) lenis.scrollTo(0, { duration: 2.2 });
     else window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
   });
-
-  // the logo film plays once each time the footer comes into view and rests on its last frame
-  if (reduce) {
-    video.poster = '/video/logo-resolve-poster.webp';
-  } else {
-    new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      videos.load(video);
-      if (video.paused && (video.ended || video.currentTime === 0)) {
-        video.currentTime = 0;
-        video.play().catch(() => {});
-      }
-    }, { threshold: 0.45 }).observe(video);
-  }
-
-  if (finePointer && !reduce) {
-    card.addEventListener('pointermove', (e) => {
-      const r = card.getBoundingClientRect();
-      gsap.to(card, {
-        '--gx': `${((e.clientX - r.left) / r.width) * 100}%`,
-        '--gy': `${((e.clientY - r.top) / r.height) * 100}%`,
-        duration: 1.2, ease: 'power3.out', overwrite: 'auto',
-      });
-    });
-  }
 }

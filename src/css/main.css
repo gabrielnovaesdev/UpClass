@@ -31,6 +31,24 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
   --nav-h: clamp(56px, 5vw, 76px);
+
+  /* the light ground shared by the calm sections and the footer: lavender mist with a warm and a cool glow */
+  --mist: #dfe0f4;
+  --mist-ink: rgba(0, 2, 41, 0.72);
+  --hair: rgba(0, 2, 41, 0.16);
+  /* big, airy capitals (Gotham; Montserrat, its open twin, fills K, Y, Z and Ç) */
+  --caps-display: "Gotham", "Montserrat", ui-sans-serif, system-ui, sans-serif;
+}
+
+.atmo {
+  color: var(--ink);
+  background-color: var(--mist);
+  background-image:
+    /* fine grain keeps the soft glows from banding into rings */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .6 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(46% 56% at 62% 40%, rgba(255, 224, 237, 0.8), rgba(255, 224, 237, 0.34) 45%, rgba(255, 224, 237, 0) 100%),
+    radial-gradient(56% 62% at 10% 88%, rgba(252, 57, 206, 0.05), rgba(252, 57, 206, 0.02) 50%, rgba(252, 57, 206, 0) 100%),
+    radial-gradient(56% 62% at 94% 96%, rgba(128, 255, 255, 0.15), rgba(128, 255, 255, 0.06) 50%, rgba(128, 255, 255, 0) 100%);
 }
 
 *,
@@ -211,9 +229,16 @@ img { display: block; max-width: 100%; }
 /* ---------------------------------------------------------------- Hero */
 
 .hero { position: relative; height: 100svh; min-height: 560px; }
+/* with motion the hero stays above the manifesto while it rises underneath (see the hand-over in hero.js) */
+.motion .hero { z-index: 2; }
 .hero__stage { position: relative; height: 100%; width: 100%; overflow: hidden; isolation: isolate; background: var(--ink); }
 
-.hero__bg { position: absolute; inset: -4%; z-index: 0; will-change: transform; }
+.hero__bg {
+  position: absolute; inset: -4%; z-index: 0; will-change: transform;
+  /* the hand-over sweeps a soft edge down this mask: the dark ground recedes and the light mist shows from the top */
+  -webkit-mask: linear-gradient(transparent 0%, transparent 30%, #000 52%, #000 100%) 0 var(--lift, 100%) / 100% 300% no-repeat;
+  mask: linear-gradient(transparent 0%, transparent 30%, #000 52%, #000 100%) 0 var(--lift, 100%) / 100% 300% no-repeat;
+}
 .hero__bg picture, .hero__bg img { width: 100%; height: 100%; }
 .hero__bg img { object-fit: cover; object-position: 55% 70%; filter: brightness(0.5) saturate(1.1); }
 .hero__bg::after {
@@ -224,7 +249,7 @@ img { display: block; max-width: 100%; }
 }
 /* film grain keeps the large gradients from banding */
 .hero__stage::before {
-  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0.08; mix-blend-mode: overlay;
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: var(--grain, 0.08); mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -243,7 +268,7 @@ img { display: block; max-width: 100%; }
   transform: translateY(5.5vw);
   white-space: nowrap;
 }
-.hero__word-outline { color: transparent; -webkit-text-stroke: 1px rgba(241, 239, 250, 0.24); }
+.hero__word-outline { color: transparent; -webkit-text-stroke: 1px var(--stroke, rgba(241, 239, 250, 0.24)); }
 .hero__word-lit {
   color: transparent;
   background: linear-gradient(100deg, #80ffff 8%, #063ff1 38%, #8b3cf7 58%, #fc39ce 82%);
@@ -298,14 +323,6 @@ img { display: block; max-width: 100%; }
 }
 @keyframes scroll-cue { 0% { transform: translateY(-100%); } 60%, 100% { transform: translateY(260%); } }
 
-/* Pixel wipe that hands the hero over to the next section */
-.wipe {
-  position: absolute; inset: 0; z-index: 6; pointer-events: none;
-  display: grid; grid-template-columns: repeat(var(--cols, 5), 1fr); grid-template-rows: repeat(var(--rows, 3), 1fr);
-}
-/* each tile overlaps its neighbours by a pixel so no seam survives sub-pixel rounding */
-.wipe i { display: block; width: calc(100% + 2px); height: calc(100% + 2px); margin: -1px; background: var(--paper); transform: scaleX(0); will-change: transform; }
-
 /* initial states for the entrance (only when JS + motion are on) */
 .motion .hero__word-line,
 .motion [data-words],
@@ -325,4 +342,9 @@ img { display: block; max-width: 100%; }
   .hero__scroll { display: none; }
   .hero__note { justify-self: start; text-align: left; }
   .hero__fallback { height: 34vh; }
+}
+/* the narrowest phones: the side columns take what they need, so "Fale conosco" never runs into the wordmark */
+@media (max-width: 360px) {
+  .nav__capsule { grid-template-columns: auto 1fr auto; }
+  .nav__cta { padding: 0 13px; }
 }
