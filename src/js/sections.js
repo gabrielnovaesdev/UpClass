@@ -1,7 +1,10 @@
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { applyContacts } from './config.js';
 import { lazyVideos } from './video.js';
+import { canRunGL, evolutionFlat, evolutionStage, filmControls } from './evo-section.js';
+import { initSymbol } from './symbol.js';
 
 // Rhythm of the page: strong moments (film, symbol, collection, upgrade, belong) alternate with calm ones
 // (manifesto, name, moments, values) so the motion leads the eye without crowding it.
@@ -10,8 +13,13 @@ export function initSections({ reduce, lenis, finePointer }) {
   const videos = lazyVideos({ reduce });
 
   // interactive pieces that work with or without motion
-  const symbolCtl = symbolParts();
   filmControls();
+  // the film stage is WebGL on capable desktops; everywhere else it is a calm, fully functional player
+  const evoGL = !reduce && finePointer && window.matchMedia('(min-width: 761px)').matches && canRunGL();
+  if (evoGL) evolutionStage({ videos }).catch(() => document.querySelector('.evo').classList.remove('is-gl'));
+  else evolutionFlat({ reduce });
+  // the symbol: a pinned 3D anatomy on desktop, chapter buttons everywhere (see symbol.js)
+  initSymbol({ reduce, lenis, wide: window.matchMedia('(min-width: 761px)').matches });
   footerBasics({ lenis, reduce, finePointer, videos });
   if (finePointer) momentsCursor();
   if (reduce) return;
@@ -24,20 +32,16 @@ export function initSections({ reduce, lenis, finePointer }) {
   const mm = gsap.matchMedia();
   mm.add({ wide: '(min-width: 761px)', narrow: '(max-width: 760px)' }, (ctx) => {
     const wide = ctx.conditions.wide;
-    film(wide);
     name(wide);
-    if (wide) {
-      symbolScroll(symbolCtl);
-      collection();
-    } else {
-      symbolCtl.autoplay();
-      collectionNarrow();
-    }
+    if (wide) collection();
+    else collectionNarrow();
     upgrade(wide, videos);
     belong(wide);
     closing();
     footerEnter();
   });
+  // the symbol pin was created before the manifesto and name pins above it: refresh them in page order
+  ScrollTrigger.sort();
 }
 
 /* ---- 01 Manifesto: the sentence sharpens word by word as you scroll (Lia) */
@@ -59,72 +63,6 @@ function manifesto() {
     .to({}, { duration: 0.3 });
 }
 
-/* ---- 02 Film: a small window in the dark opens until you are inside the film (Lusion reel, KPR) */
-function film(wide) {
-  const pin = document.querySelector('.film__pin');
-  const foot = document.querySelector('.film__foot');
-  if (!wide) {
-    gsap.from(['.film__line', '.film__frame', foot], {
-      y: 40, autoAlpha: 0, duration: 1.2, ease: 'expo.out', stagger: 0.1,
-      scrollTrigger: { trigger: pin, start: 'top 75%', once: true },
-    });
-    return;
-  }
-  gsap.set(foot, { autoAlpha: 0, y: 16 });
-  gsap.timeline({
-    scrollTrigger: { trigger: pin, start: 'top top', end: '+=160%', pin: true, scrub: 0.6 },
-  })
-    .fromTo(pin, { '--ix': '36%', '--iy': '33%', '--r': '28px' }, { '--ix': '0%', '--iy': '0%', '--r': '0px', ease: 'power2.inOut', duration: 1 }, 0.1)
-    .fromTo('.film__line--a', { x: 0 }, { x: '-2vw', ease: 'power1.in', duration: 0.8 }, 0.1)
-    .fromTo('.film__line--b', { x: 0 }, { x: '2vw', ease: 'power1.in', duration: 0.8 }, 0.1)
-    .fromTo('.film__video', { scale: 1.25 }, { scale: 1, ease: 'none', duration: 1.1 }, 0)
-    .to(foot, { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.25 }, 1)
-    .to({}, { duration: 0.25 });
-}
-
-// chapters, play/pause and a running clock, like a film player stripped to its essentials
-function filmControls() {
-  const video = document.querySelector('.film__video');
-  const buttons = [...document.querySelectorAll('.film__chapters button')];
-  const toggle = document.querySelector('.film__toggle');
-  const time = document.querySelector('.film__time');
-  const marks = buttons.map((b) => +b.dataset.t);
-  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-  let userPaused = false;
-
-  video.addEventListener('timeupdate', () => {
-    const t = video.currentTime;
-    const end = video.duration || 57.28;
-    time.textContent = `${fmt(t)} / ${fmt(end)}`;
-    buttons.forEach((b, i) => {
-      const a = marks[i];
-      const z = marks[i + 1] ?? end;
-      b.classList.toggle('is-on', t >= a && t < z);
-      b.style.setProperty('--p', gsap.utils.clamp(0, 1, (t - a) / (z - a)).toFixed(3));
-    });
-  });
-  buttons.forEach((b) =>
-    b.addEventListener('click', () => {
-      video.currentTime = +b.dataset.t;
-      if (!userPaused) video.play().catch(() => {});
-    }),
-  );
-  toggle.addEventListener('click', () => {
-    userPaused = !video.paused;
-    if (userPaused) video.pause();
-    else video.play().catch(() => {});
-  });
-  const sync = () => {
-    toggle.textContent = video.paused ? 'Assistir' : 'Pausar';
-    toggle.setAttribute('aria-pressed', String(video.paused));
-  };
-  video.addEventListener('play', sync);
-  video.addEventListener('pause', sync);
-  sync();
-  // the visibility observer would restart it; respect an explicit pause
-  video.addEventListener('play', () => userPaused && video.pause());
-}
-
 /* ---- 03 Name: "up" and "class" travel towards each other until the plus disappears (Mana) */
 function name(wide) {
   const up = document.querySelector('.name__up');
@@ -142,62 +80,6 @@ function name(wide) {
     .fromTo(plus, { rotate: 0, width: '0.62em', autoAlpha: 1 }, { rotate: 180, width: '0em', autoAlpha: 0, ease: 'power3.inOut', duration: 0.9 }, 0.1)
     .to(defs, { autoAlpha: 1, y: 0, stagger: 0.1, duration: 0.4, ease: 'power2.out' }, 0.8)
     .to({}, { duration: 0.2 });
-}
-
-/* ---- 04 Symbol: bolts, arrows and the hidden phone, one idea at a time */
-function symbolParts() {
-  const fig = document.querySelector('.symbol__fig');
-  const items = [...document.querySelectorAll('.symbol__part')];
-  const count = document.querySelector('.symbol__count-n');
-  const names = items.map((li) => li.dataset.part);
-  let current = 0;
-  let timer = null;
-
-  // normalise stroke lengths so a single dasharray draws every path
-  fig.querySelectorAll('.symbol__arrows path, .symbol__phone rect').forEach((p) => p.setAttribute('pathLength', '1'));
-
-  function set(i) {
-    if (i === current && fig.dataset.part === names[i]) return;
-    current = i;
-    fig.dataset.part = names[i];
-    items.forEach((li, k) => {
-      li.classList.toggle('is-active', k === i);
-      li.querySelector('button').setAttribute('aria-pressed', String(k === i));
-    });
-    count.textContent = `0${i + 1}`;
-  }
-  items.forEach((li, i) =>
-    li.querySelector('button').addEventListener('click', () => {
-      clearInterval(timer);
-      timer = null;
-      set(i);
-    }),
-  );
-  return {
-    set,
-    autoplay() {
-      // on touch screens the three ideas take turns while the section is on screen
-      const io = new IntersectionObserver(([e]) => {
-        if (e.isIntersecting && !timer) timer = setInterval(() => set((current + 1) % names.length), 3600);
-        else if (!e.isIntersecting) { clearInterval(timer); timer = null; }
-      }, { threshold: 0.4 });
-      io.observe(fig);
-    },
-  };
-}
-
-function symbolScroll(ctl) {
-  gsap.from(['.symbol__head > *', '.symbol__parts'], {
-    y: 30, autoAlpha: 0, duration: 1.2, ease: 'expo.out', stagger: 0.08,
-    scrollTrigger: { trigger: '.symbol__pin', start: 'top 70%', once: true },
-  });
-  gsap.timeline({
-    scrollTrigger: {
-      trigger: '.symbol__pin', start: 'top top', end: '+=210%', pin: true, scrub: 0.8,
-      onUpdate: (self) => ctl.set(Math.min(2, Math.floor(self.progress * 3))),
-    },
-  })
-    .fromTo('.symbol__svg', { scale: 0.86, rotate: -6 }, { scale: 1.04, rotate: 3, ease: 'none', duration: 1 }, 0);
 }
 
 /* ---- 05 Collection: a pinned track of glass cards turning in 3D over outlined type (Lia) */
