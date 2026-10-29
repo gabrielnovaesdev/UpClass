@@ -242,7 +242,7 @@
 .detail__fallback { width: auto; height: 38vh; margin: 9vh auto 0; }
 
 .detail.is-live .detail__pin { height: 100svh; padding: 0; perspective: 900px; perspective-origin: 50% 50%; }
-.detail.is-live .detail__gl { display: block; position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
+.detail.is-live .detail__gl { display: block; position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
 .detail.is-live .detail__head { position: absolute; z-index: 3; left: var(--gutter); right: var(--gutter); top: calc(var(--nav-h) + 6vh); will-change: transform; }
 .detail.is-live .detail__list { position: absolute; inset: 0; z-index: 1; display: block; margin: 0; transform-style: preserve-3d; }
 .detail.is-live .detail__item { position: absolute; left: 0; right: 0; top: 50%; display: block; will-change: transform; }
@@ -250,6 +250,8 @@
 .detail.is-live .detail__word { color: color-mix(in srgb, var(--ink) calc(var(--k, 0) * 100%), #9aa0c2); }
 .detail.is-live .detail__text { position: absolute; left: 50%; top: calc(100% + 16vh); width: min(25em, 84vw); transform: translateX(-50%); opacity: var(--t, 0); }
 .detail.is-live .detail__fallback { display: none; }
+/* while an object flies in, the page holds on its word (detail.js) */
+html.is-holding { overflow: hidden; overscroll-behavior: none; touch-action: none; }
 
 /* ---------------------------------------------------------------- 05 Coleção: frosted cards drift across the title
    Static flow by default: a row of cards that scrolls sideways. With .is-live (sections.js) the section pins and the
