@@ -66,6 +66,8 @@ function shapesOf(svgText) {
 /**
  * mode 'hero'  — floats behind the hero copy, spins with scroll, tilts towards the pointer.
  * mode 'intro' — centred and fully art-directed from outside through `rig` (see intro.js).
+ * mode 'symbol' — centred, art-directed by the symbol section (see symbol.js); `rig.project` maps logo
+ *                 coordinates to screen pixels so the HTML/SVG annotations stay locked to the 3D mark.
  */
 export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
   const [img, reliefImg] = await Promise.all([loadImage(ART_URL), loadImage(RELIEF_URL)]);
@@ -188,8 +190,8 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     camera.updateProjectionMatrix();
     visibleH = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360);
     const narrow = w < 760;
-    const frac = mode === 'intro' ? introFrac(w, h) : narrow ? 0.3 : 0.4;
-    baseY = mode === 'intro' ? 0 : visibleH * (narrow ? 0.07 : -0.035); // portrait screens lift the bolt clear of the copy
+    const frac = mode === 'intro' ? introFrac(w, h) : mode === 'symbol' ? symbolFrac(w, h) : narrow ? 0.3 : 0.4;
+    baseY = mode === 'hero' ? visibleH * (narrow ? 0.07 : -0.035) : 0; // portrait screens lift the hero bolt clear of the copy
     unit = (visibleH * frac) / VB_H;
     model.scale.set(unit, -unit, unit); // svg y-axis points down
     // keep the shadow frustum hugging the mark at any size
@@ -237,8 +239,21 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
       state.tx = x;
       state.ty = y;
     },
-    // direct handles for the intro choreography
-    rig: { spin, bolts, key, camera, get unit() { return unit; } },
+    // direct handles for the intro and symbol choreography
+    rig: {
+      spin, bolts, key, rimPink, rimBlue, camera,
+      get unit() { return unit; },
+      // logo-space point (svg units, y down) on a given bolt → pixel position inside the host
+      project(x, y, bolt = null, z = 0) {
+        const v = new Vector3(x - VB_W / 2, y - VB_H / 2, z);
+        spin.updateMatrixWorld(true);
+        if (bolt) bolt.localToWorld(v.sub(bolt.userData.home)); // follows that bolt's own move and turn
+        else model.localToWorld(v);
+        v.project(camera);
+        return [((v.x + 1) / 2) * host.clientWidth, ((1 - v.y) / 2) * host.clientHeight];
+      },
+      render: () => renderer.render(scene, camera),
+    },
     dispose() {
       stop();
       ro.disconnect();
@@ -247,6 +262,11 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
       renderer.forceContextLoss();
     },
   };
+}
+
+// The symbol section gives the mark most of the screen height beside the copy; on phones it fills its own stage.
+export function symbolFrac(w, h) {
+  return w < 760 ? 0.82 : 0.56;
 }
 
 // On screen the intro mark is exactly as tall as the SVG opening it hands over to.

@@ -140,26 +140,32 @@
       </div>
     </section>
 
-    <section class="film" id="filme" data-theme="dark" aria-labelledby="film-title">
-      <div class="film__pin">
-        <div class="film__glow" aria-hidden="true"></div>
-        <h2 class="film__title" id="film-title">
-          <span class="film__line film__line--a">A evolução</span>
-          <span class="film__line film__line--b">faz parte de quem somos.</span>
-        </h2>
-        <div class="film__frame">
+    <section class="evo" id="filme" data-theme="dark" aria-labelledby="evo-title">
+      <div class="evo__pin">
+        <div class="evo__ambient" aria-hidden="true"></div>
+        <header class="evo__intro">
+          <p class="caps section-label">( 02 — A evolução )</p>
+          <h2 class="evo__title" id="evo-title">A evolução faz parte de quem somos.</h2>
+          <p class="evo__lead">O filme da Upclass — 57 segundos sobre energia, evolução e detalhe. <span class="evo__lead-gl">Role para trazê-lo até você.</span></p>
+        </header>
+        <!-- where the film starts (small, in brand duotone) and where it lands (the real player) -->
+        <div class="evo__slot" aria-hidden="true"></div>
+        <figure class="evo__player">
           <video class="film__video" data-lazy data-autoplay muted loop playsinline preload="none" poster="/img/film/iphone-blue-1600.webp" aria-label="Filme da marca Upclass: raios, iPhones e a promessa Nada menos do que você espera.">
             <source data-src="/video/film-1080.webm" type="video/webm" media="(min-width: 761px)" />
             <source data-src="/video/film-1080.mp4" type="video/mp4" media="(min-width: 761px)" />
             <source data-src="/video/film-720.mp4" type="video/mp4" />
           </video>
-          <div class="film__hud" aria-hidden="true">
-            <span class="caps film__rec"><i></i>Filme da marca</span>
+          <figcaption class="evo__hud">
+            <span class="caps evo__rec"><i aria-hidden="true"></i>Filme da marca</span>
             <span class="caps film__time">00:00 / 00:57</span>
-          </div>
-        </div>
+          </figcaption>
+        </figure>
+        <canvas class="evo__gl" aria-hidden="true"></canvas>
+        <p class="evo__words" aria-hidden="true"><span class="evo__word evo__word--a">assista</span><span class="evo__word evo__word--b">ao filme</span></p>
+        <p class="evo__ticker" aria-hidden="true"><span>▶ o filme da upclass&nbsp;&nbsp;▶ energia, evolução e detalhe&nbsp;&nbsp;</span><span>▶ o filme da upclass&nbsp;&nbsp;▶ energia, evolução e detalhe&nbsp;&nbsp;</span></p>
         <div class="film__foot">
-          <p class="caps film__note">O filme da Upclass — 57 segundos<br />sobre energia, evolução e detalhe.</p>
+          <button class="evo__play" type="button" aria-label="Pausar o filme"><span class="evo__play-icon" aria-hidden="true"></span></button>
           <ol class="film__chapters" aria-label="Capítulos do filme">
             <li><button type="button" data-t="0"><span class="caps">00</span>Iniciar<i aria-hidden="true"></i></button></li>
             <li><button type="button" data-t="4"><span class="caps">01</span>Evolução<i aria-hidden="true"></i></button></li>
@@ -170,7 +176,6 @@
             <li><button type="button" data-t="37"><span class="caps">06</span>Promessa<i aria-hidden="true"></i></button></li>
             <li><button type="button" data-t="45"><span class="caps">07</span>Upclass<i aria-hidden="true"></i></button></li>
           </ol>
-          <button class="film__toggle caps" type="button" aria-pressed="false">Pausar</button>
         </div>
       </div>
     </section>
@@ -196,51 +201,49 @@
       </div>
     </section>
 
-    <section class="symbol" id="simbolo" data-theme="dark" aria-labelledby="symbol-title">
-      <div class="symbol__pin">
-        <div class="symbol__head">
-          <p class="caps section-label">( 03 — O símbolo )</p>
-          <h2 class="symbol__title" id="symbol-title">Na Upclass, cada detalhe é importante.</h2>
-          <p class="symbol__lead">O raio é um fenômeno da natureza: forte, rápido, impossível de ignorar. Dentro do nosso, há três ideias.</p>
+    <section class="sym" id="simbolo" data-theme="dark" aria-labelledby="sym-title">
+      <div class="sym__pin">
+        <div class="sym__ambient" aria-hidden="true"></div>
+        <div class="sym__stage" aria-hidden="true">
+          <img class="sym__fallback" src="/img/bolt-art-700.webp" alt="" width="409" height="701" loading="lazy" decoding="async" />
+          <canvas class="sym__gl"></canvas>
+          <!-- annotations locked to the 3D mark every frame: the construction trace, the arrows, the hidden phone -->
+          <svg class="sym__overlay">
+            <g class="sym__trace"></g>
+            <g class="sym__arrows">
+              <path class="sym__arrow sym__arrow--up" d="" />
+              <path class="sym__arrow sym__arrow--down" d="" />
+            </g>
+            <g class="sym__phone"><rect class="sym__phone-body" /><rect class="sym__phone-notch" /></g>
+            <path class="sym__lead" d="" />
+          </svg>
+          <p class="caps sym__tag"><span class="sym__tag-text"></span></p>
         </div>
-        <ol class="symbol__parts">
-          <li class="symbol__part is-active" data-part="bolts">
-            <button type="button" aria-pressed="true"><span class="caps">01</span><span class="symbol__part-title">Dois raios</span></button>
-            <p>Ícones de upgrade, evolução e potência. Aquele momento em que algo acontece — rápido, impactante, transformador.</p>
+        <header class="sym__head">
+          <p class="caps section-label">( 03 — O símbolo )</p>
+          <h2 class="sym__title" id="sym-title">Na Upclass, cada detalhe é importante.</h2>
+          <p class="sym__lead-text">Dentro do símbolo, trouxemos dois raios para carregar cada significado da marca.</p>
+        </header>
+        <ol class="sym__chapters">
+          <li class="sym__chapter is-active" data-tag="Construção">
+            <button type="button" aria-pressed="true"><span class="caps">01</span><span class="sym__chapter-title">Construção</span></button>
+            <p>Cada curva e cada ângulo do símbolo nascem de uma construção precisa. Na Upclass, cada detalhe é importante.</p>
           </li>
-          <li class="symbol__part" data-part="arrows">
-            <button type="button" aria-pressed="false"><span class="caps">02</span><span class="symbol__part-title">Setas embutidas</span></button>
-            <p>Apontam de cima para baixo e de baixo para cima: o símbolo universal de update. Evolução em fluxo, atualização constante.</p>
+          <li class="sym__chapter" data-tag="Raio · Potência · Evolução · Status">
+            <button type="button" aria-pressed="false"><span class="caps">02</span><span class="sym__chapter-title">Dois raios</span></button>
+            <p>Muito mais do que energia: ícones de upgrade, evolução e potência. Aquele momento em que algo acontece — rápido, impactante, transformador.</p>
           </li>
-          <li class="symbol__part" data-part="phone">
-            <button type="button" aria-pressed="false"><span class="caps">03</span><span class="symbol__part-title">O celular escondido</span></button>
-            <p>Entre os raios, de forma sutil, surge um telefone. Um <i>easter egg</i> que lembra o que está no centro de tudo.</p>
+          <li class="sym__chapter" data-tag="Seta · Movimento · Upgrade">
+            <button type="button" aria-pressed="false"><span class="caps">03</span><span class="sym__chapter-title">Setas embutidas</span></button>
+            <p>Apontam de cima para baixo e de baixo para cima: atualização constante, evolução em fluxo — o símbolo universal de update.</p>
+          </li>
+          <li class="sym__chapter" data-tag="Celular">
+            <button type="button" aria-pressed="false"><span class="caps">04</span><span class="sym__chapter-title">O celular escondido</span></button>
+            <p>Entre os raios, de forma sutil, surge a forma de um telefone: um easter egg que reforça a conexão com o produto central da marca.</p>
           </li>
         </ol>
-        <figure class="symbol__fig" data-part="bolts" aria-hidden="true">
-          <svg class="symbol__svg" viewBox="-70 -50 463.2 653.99">
-            <defs>
-              <linearGradient id="sym-up" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#80FFFF" /><stop offset="1" stop-color="#063FF1" /></linearGradient>
-              <linearGradient id="sym-lo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FC39CE" /><stop offset="1" stop-color="#D92B82" /></linearGradient>
-            </defs>
-            <path class="symbol__bolt symbol__bolt--up" fill="url(#sym-up)" d="M207.03 21.38L128.89 157.47C122.39 168.55 129.66 182.62 142.46 183.73L204.67 189.41C214.48 190.26 221.65 199.03 220.53 208.81L208.82 311.45C207.1 326.58 227.17 333.43 235.05 320.4L316.5 185.79C323.2 174.71 315.95 160.44 303.05 159.33L273.93 158.04L241.16 156.59C231.36 155.74 224.19 146.97 225.31 137.2L236.78 28.03C238.91 9.31 235.4 0 228.94 0C223.29 0 215.38 7.15 207.03 21.38Z" />
-            <path class="symbol__bolt symbol__bolt--lo" fill="url(#sym-lo)" d="M88.15 224.49L6.7 359.1C0 370.18 7.25 384.45 20.15 385.57L49.27 386.85L82.04 388.3C91.84 389.15 99.01 397.92 97.89 407.69L86.42 516.86C82.42 551.98 98.29 553.99 116.17 523.51L194.31 387.42C200.81 376.35 193.54 362.27 180.74 361.16L118.52 355.48C108.72 354.63 101.55 345.86 102.67 336.08L114.38 233.44C115.39 224.6 108.95 218.59 101.85 217.72C101.26 217.65 100.67 217.61 100.07 217.61C95.58 217.61 91.04 219.71 88.15 224.49Z" />
-            <g class="symbol__arrows">
-              <path d="M232 150 V-30 M214 -10 L232 -30 L250 -10" />
-              <path d="M92 404 V584 M74 564 L92 584 L110 564" />
-            </g>
-            <g class="symbol__phone">
-              <rect x="117" y="193" width="90" height="160" rx="16" />
-              <rect x="149" y="202" width="26" height="7" rx="3.5" />
-            </g>
-          </svg>
-          <figcaption class="symbol__labels">
-            <span class="caps symbol__label" data-for="bolts">Raio · Potência · Evolução</span>
-            <span class="caps symbol__label" data-for="arrows">Seta · Movimento · Upgrade</span>
-            <span class="caps symbol__label" data-for="phone">Celular</span>
-          </figcaption>
-        </figure>
-        <p class="caps symbol__count" aria-hidden="true"><span class="symbol__count-n">01</span> / 03</p>
+        <p class="sym__outro">O raio é um fenômeno da natureza: forte, rápido, impossível de ignorar. É exatamente isso que a Upclass entrega — evolução instantânea.</p>
+        <p class="caps sym__count" aria-hidden="true"><span class="sym__count-n">01</span> / 04</p>
       </div>
     </section>
 
