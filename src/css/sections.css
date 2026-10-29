@@ -52,7 +52,12 @@
    - .is-gl (desktop + WebGL): a pinned stage where a 3D panel playing the film travels from the slot to the player,
      wrapped by a ribbon, then hands over to the native <video>; the pin releases and the page scrolls on with it. */
 
-.evo { position: relative; padding-bottom: 8vh; background: var(--ink); color: var(--light); }
+.evo { position: relative; z-index: 2; padding-bottom: 8vh; background: var(--ink); color: var(--light); }
+/* without the stage (phones, reduced motion): the dark runs out into the mist under a soft edge, not a hard line */
+.evo:not(.is-gl)::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 26svh; pointer-events: none;
+  background: linear-gradient(180deg, var(--ink), rgba(0, 2, 41, 0.55) 38%, rgba(0, 2, 41, 0.14) 72%, rgba(0, 2, 41, 0));
+}
 .evo__pin { position: relative; isolation: isolate; padding: calc(var(--nav-h) + 6vh) 0 0; }
 .evo__ambient {
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
@@ -175,11 +180,26 @@
   right: 7vw; top: 21vh; width: 30vw; aspect-ratio: 16 / 9;
 }
 .evo.is-gl .evo__gl { display: block; position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
-/* the landing rect: the whole screen inside the margins, always 16:9; it sits over the ribbon */
+/* Hand-over to the light flow (evo-section.js): the section itself is transparent and sits above the flow, which
+   starts under the stage's last stretch; the dark is a layer of the stage that lifts away under a soft edge, as the
+   hero's ground does over the manifesto. */
+.evo.is-gl { z-index: 2; padding-bottom: 0; background: transparent; }
+.evo.is-gl .evo__pin::before {
+  content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none; background: var(--ink); opacity: var(--ground, 1);
+  -webkit-mask: linear-gradient(#000 0%, #000 48%, transparent 70%, transparent 100%) 0 var(--lift, 0%) / 100% 300% no-repeat;
+  mask: linear-gradient(#000 0%, #000 48%, transparent 70%, transparent 100%) 0 var(--lift, 0%) / 100% 300% no-repeat;
+}
+.evo.is-gl + .flow { margin-top: calc(-1 * var(--evo-overlap, 0px)); }
+.evo.is-gl + .flow > .name { padding-top: calc(var(--evo-overlap, 0px) - var(--evo-lead, 0px)); }/* the landing rect: the whole screen inside the margins, always 16:9; it sits over the ribbon */
 .evo.is-gl .evo__player {
   position: absolute; z-index: 3; margin: 0; left: 50%; top: 50%;
   width: min(calc(100vw - 2 * var(--gutter)), calc((100svh - 32px) * 16 / 9));
-  transform: translate(-50%, -50%); opacity: 0; visibility: hidden;
+  transform: translate(-50%, -50%); opacity: 0;
+  /* its own layer from the start: it fades in and later rises out of the frame without repainting a large video */
+  will-change: transform, opacity;
+  /* it lands 16px above the stage's edge: a short, even glow fades out before it, where the long drop shadow of the
+     flat player was cut off in a straight line */
+  box-shadow: 0 0 44px -22px rgba(6, 63, 241, 0.6);
 }
 .evo.is-gl .evo__reel { z-index: 4; left: 0; top: 0; transform: none; font-size: var(--reel-fs, 80px); will-change: transform, opacity; }
 .evo.is-gl .evo__reel-l { will-change: transform, opacity; }
@@ -250,8 +270,10 @@
 .detail.is-live .detail__word { color: color-mix(in srgb, var(--ink) calc(var(--k, 0) * 100%), #9aa0c2); }
 .detail.is-live .detail__text { position: absolute; left: 50%; top: calc(100% + 16vh); width: min(25em, 84vw); transform: translateX(-50%); opacity: var(--t, 0); }
 .detail.is-live .detail__fallback { display: none; }
-/* while an object flies in, the page holds on its word (detail.js) */
-html.is-holding { overflow: hidden; overscroll-behavior: none; touch-action: none; }
+/* while an object flies in, the page holds on its word (detail.js). The scrollbar stays: the hold blocks the input
+   and pulls the page back instead, so the stopped Lenis must not hide the overflow as it does for the menu */
+html.is-holding { overscroll-behavior: none; touch-action: none; }
+html.lenis.lenis-stopped.is-holding { overflow: visible; }
 
 /* ---------------------------------------------------------------- 05 Coleção: frosted cards drift across the title
    Static flow by default: a row of cards that scrolls sideways. With .is-live (sections.js) the section pins and the
@@ -304,35 +326,58 @@ html.is-holding { overflow: hidden; overscroll-behavior: none; touch-action: non
   font-size: clamp(32px, 4.4vw, 80px); line-height: 0.98; letter-spacing: -0.02em; max-width: 13em;
 }
 .moments__list { list-style: none; margin: 0; padding: 0; }
+/* the title starts on the line of the section's heading; the text sits in its own column on the right */
 .moment {
-  position: relative; display: grid; grid-template-columns: 1fr 2fr 1.3fr; gap: var(--gutter); align-items: baseline;
-  padding: clamp(26px, 4.6vh, 52px) 0; cursor: default;
+  position: relative; display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--gutter); align-items: baseline;
+  padding: clamp(26px, 4.6vh, 52px) 0; cursor: default; outline: none;
 }
 /* hairlines only between the rows, fading out at both ends: nothing draws a hard edge across the page */
 .moment + .moment::before {
   content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
   background: linear-gradient(90deg, rgba(0, 2, 41, 0), var(--hair) 16%, var(--hair) 84%, rgba(0, 2, 41, 0));
 }
+/* the active row draws its own line in the brand's colours along its foot */
+.moment::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; z-index: 1;
+  background: linear-gradient(90deg, var(--pink), var(--blue) 70%, rgba(6, 63, 241, 0));
+  transform: scaleX(0); transform-origin: 0 50%; transition: transform 0.9s var(--ease-out);
+}
 .moment__title {
   font-family: var(--caps-display); text-transform: uppercase;
   font-size: clamp(26px, 3.3vw, 62px); line-height: 0.95; letter-spacing: -0.025em;
   transition: transform 0.8s var(--ease-out), color 0.5s;
 }
-.moment__text { font-size: clamp(14px, 1vw, 16px); line-height: 1.55; max-width: 24em; color: var(--mist-ink); }
-.moment__num { color: rgba(0, 2, 41, 0.45); }
-.moment__media { display: none; }
-/* the rows that are not under the pointer recede to the cool grey of the far words in the details */
-.moments__list:hover .moment__title { color: #9aa0c2; }
-.moments__list:hover .moment:hover .moment__title { color: var(--ink); }
-.moment:hover .moment__title { transform: translateX(1.4vw); }
-.moments__cursor {
-  position: fixed; left: 0; top: 0; z-index: 30; width: 24vw; aspect-ratio: 4 / 3; pointer-events: none;
-  border-radius: 20px; overflow: hidden; visibility: hidden;
-  box-shadow: 0 40px 80px -30px rgba(0, 2, 41, 0.5);
+.moment__text {
+  font-size: clamp(14px, 1vw, 16px); line-height: 1.55; max-width: 24em; color: var(--mist-ink);
+  transition: opacity 0.5s, transform 0.8s var(--ease-out);
 }
-.moments__shot { position: absolute; inset: 0; opacity: 0; transition: opacity 0.5s var(--ease-out); }
+.moment__media { display: none; }
+/* one row in focus at a time (pointer or keyboard): the others recede to the cool grey of the far words in the
+   details, their text dims, and the active one steps forward with its line */
+.moments__list:is(:hover, :focus-within) .moment__title { color: #9aa0c2; }
+.moments__list:is(:hover, :focus-within) .moment__text { opacity: 0.42; }
+.moments__list .moment:is(:hover, :focus-visible) .moment__title { color: var(--ink); transform: translateX(1.4vw); }
+.moments__list .moment:is(:hover, :focus-visible) .moment__text { opacity: 1; transform: translateX(0.5vw); }
+.moment:is(:hover, :focus-visible)::after { transform: scaleX(1); }
+/* a small print beside the pointer, not a window over the row: it leaves the description readable. It opens from
+   its centre, leans with the pointer's motion and the picture drifts inside it (sections.js) */
+.moments__cursor {
+  position: fixed; left: 0; top: 0; z-index: 30; width: clamp(180px, 14vw, 260px); aspect-ratio: 4 / 3; pointer-events: none;
+  border-radius: 14px; overflow: hidden; visibility: hidden; background: #e9e8f6;
+  box-shadow: 0 24px 48px -24px rgba(0, 2, 41, 0.38), 0 6px 14px -8px rgba(0, 2, 41, 0.2);
+}
+/* a thin light edge on top, like the cards' glass */
+.moments__cursor::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+/* the next picture settles in from a slight zoom while the previous one fades; each one overhangs the frame a little
+   so it can drift without showing an edge */
+.moments__shot { position: absolute; inset: -8%; opacity: 0; transition: opacity 0.6s var(--ease-out); }
 .moments__shot.is-on { opacity: 1; }
 .moments__shot img, .moments__shot picture { width: 100%; height: 100%; object-fit: cover; }
+.moments__shot img { transform: scale(1.12); transition: transform 1.1s var(--ease-out); }
+.moments__shot.is-on img { transform: scale(1); }
 
 /* ---------------------------------------------------------------- 07 Promise: bento of reasons */
 
@@ -549,12 +594,17 @@ html.is-holding { overflow: hidden; overscroll-behavior: none; touch-action: non
   .moments__head { margin-bottom: 7vh; }
   .moments__title { font-size: clamp(28px, 8.6vw, 44px); }
   .moment__title { font-size: clamp(24px, 7.6vw, 40px); }
-  .moment { grid-template-columns: 2.4em 1fr; row-gap: 12px; }
-  .moment__text, .moment__media { grid-column: 2; }
-  .moment__media { display: block; aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; }
+  /* one column; the picture is a small print of the same shape under every text, not a full-width banner */
+  .moment { grid-template-columns: 1fr; row-gap: 12px; padding: 30px 0 34px; }
+  .moment__media { display: block; width: min(62%, 260px); aspect-ratio: 4 / 3; margin-top: 8px; border-radius: 12px; overflow: hidden; box-shadow: 0 16px 32px -20px rgba(0, 2, 41, 0.35); }
   .moment__media img, .moment__media picture { width: 100%; height: 100%; object-fit: cover; }
   .moments__cursor { display: none; }
+  /* no hover on touch: every row stays fully legible; only keyboard focus picks one out */
   .moments__list:hover .moment__title { color: inherit; }
+  .moments__list:hover .moment__text { opacity: 1; }
+  .moments__list .moment:hover .moment__title, .moments__list .moment:hover .moment__text { transform: none; }
+  .moment:hover::after { transform: scaleX(0); }
+  .moment:focus-visible::after { transform: scaleX(1); }
 
   .promise__head { grid-template-columns: 1fr; gap: 18px; }
   .bento { grid-template-columns: 1fr; grid-auto-rows: auto; }
@@ -599,4 +649,6 @@ html.is-holding { overflow: hidden; overscroll-behavior: none; touch-action: non
   .hero__scroll i, .hero__shadow { animation: none; }
   .menu { transition: none; }
   .upgrade__window { -webkit-mask: none; mask: none; }
+  .moments__list .moment:is(:hover, :focus-visible) :is(.moment__title, .moment__text) { transform: none; }
+  .moment::after, .moments__shot img { transition: none; }
 }

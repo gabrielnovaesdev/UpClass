@@ -1,36 +1,33 @@
 import gsap from 'gsap';
 import {
-  CatmullRomCurve3,
+  AdditiveBlending,
+  BufferGeometry,
   Color,
-  DirectionalLight,
-  AmbientLight,
   Float32BufferAttribute,
   Mesh,
-  MeshPhysicalMaterial,
   PerspectiveCamera,
   PlaneGeometry,
-  PMREMGenerator,
+  Points,
   Scene,
   ShaderMaterial,
   SRGBColorSpace,
   Texture,
-  TubeGeometry,
-  Vector3,
   VideoTexture,
   WebGLRenderer,
 } from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import svgText from '../assets/bolt.svg?raw';
 
 /*
  * 02 · A evolução — the film takes a body.
- * A WebGL panel plays the brand film as a texture. It starts small, in the brand's blue duotone, beside the
- * title; a glossy 3D ribbon in the brand gradient winds around and behind it (lit tube geometry is why this
- * is WebGL and not CSS). Scrolling pulls the panel to the player: it bows with the scroll speed,
- * colour is revealed by a wipe along the bolt's diagonal, and on landing the native <video> takes over,
- * pixel-aligned, so the film stays sharp, correctly framed and fully controllable.
+ * The brand's bolt stands beside the title, drawn in thousands of points of light that shimmer and part around the
+ * cursor. Scrolling turns them into a river that curves into the film: the panel grows out of the bolt's centre
+ * while they pour into it, its colour revealed by a wipe along the bolt's diagonal, and on landing the native
+ * <video> takes over, pixel-aligned, so the film stays sharp and fully controllable. A few points stay out as dust
+ * around the film; on the way out they rise and fade into the light mist of the next section.
+ * Points and panel are two draws; everything moves in the vertex shader, so the stage keeps a steady frame rate.
  */
 
-const vert = /* glsl */ `
+const panelVert = /* glsl */ `
   uniform float uBend;   // bow along the width, from scroll speed
   uniform float uCurl;   // diagonal twist while travelling
   varying vec2 vUv;
@@ -42,7 +39,7 @@ const vert = /* glsl */ `
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }
 `;
-const frag = /* glsl */ `
+const panelFrag = /* glsl */ `
   uniform sampler2D uTex;
   uniform vec2 uSize;     // panel size in px, for the rounded corners
   uniform float uRadius;
@@ -73,29 +70,115 @@ const frag = /* glsl */ `
   }
 `;
 
-// path of the ribbon in stage space: x/y as fractions of the stage, z in front (+) / behind (–) the panel
-const RIBBON = [
-  [-0.08, 0.06, -0.2], [0.18, 0.12, -0.1], [0.5, 0.02, -0.3], [0.78, 0.1, -0.5], [0.97, 0.24, -0.4],
-  [0.99, 0.46, 0.35], [0.76, 0.62, 0.55], [0.56, 0.5, 0.2], [0.6, 0.3, -0.45], [0.9, 0.28, -0.3],
-  [1.08, 0.62, 0.2], [0.82, 0.92, 0.4], [0.4, 0.86, 0.1], [0.12, 1.1, -0.1],
-];
-// mostly the brand's electric blue, warming to pink only towards its tail — colour, not glow
-const RIBBON_STOPS = ['#2a6bff', '#063ff1', '#0a2ad8', '#3b2fe0', '#c63bd6'].map((h) => new Color(h));
+// Every point is placed in screen pixels and moved here: gather (scattered → bolt), stream (bolt → panel, along a
+// curve), dust (the few that stay out drift around the film) and exit (they rise and fade).
+const pointsVert = /* glsl */ `
+  attribute vec2 aBolt;    // position in the bolt's box, 0..1
+  attribute vec2 aPanel;   // where it lands in the panel, 0..1
+  attribute vec2 aAway;    // scattered start / dust spot, in screen fractions
+  attribute vec4 aSeed;    // delay, swing, phase, size
+  attribute float aDust;   // 1: stays out of the film as dust
+  uniform vec2 uRes;
+  uniform vec4 uBoltRect;  // x, y, w, h in px
+  uniform vec4 uPanelRect;
+  uniform vec2 uPointer;
+  uniform float uTime;
+  uniform float uGather;
+  uniform float uFlow;
+  uniform float uExit;
+  uniform float uPx;       // device pixels per css pixel
+  varying float vAlpha;
+  varying float vTone;
 
-export async function createEvolution({ host, canvas, video, poster }) {
+  float ease(float x) { return x * x * (3.0 - 2.0 * x); }
+
+  void main() {
+    float t = uTime;
+    // the bolt, breathing a little; points part around the cursor
+    vec2 bolt = uBoltRect.xy + aBolt * uBoltRect.zw;
+    bolt += vec2(sin(t * 0.9 + aSeed.z * 6.283), cos(t * 0.75 + aSeed.z * 4.1)) * (1.2 + aSeed.w * 1.6);
+    vec2 dp = bolt - uPointer;
+    float r2 = dot(dp, dp);
+    bolt += dp / (sqrt(r2) + 1.0) * 46.0 * exp(-r2 / 9800.0) * (1.0 - uFlow);
+
+    // gather: from a loose cloud into the bolt, each point on its own beat
+    float g = ease(clamp((uGather - aSeed.x * 0.5) / 0.5, 0.0, 1.0));
+    vec2 scattered = aAway * uRes + (aBolt - 0.5) * uBoltRect.zw * 2.2;
+    vec2 pos = mix(scattered, bolt, g);
+
+    // stream: along a curve that swings out and dips before reaching its spot in the panel (or its dust spot)
+    float f = clamp((uFlow - aSeed.x * 0.5) / 0.5, 0.0, 1.0);
+    float fe = ease(f);
+    vec2 inPanel = uPanelRect.xy + aPanel * uPanelRect.zw;
+    vec2 dust = aAway * uRes + vec2(sin(t * 0.21 + aSeed.z * 9.0), cos(t * 0.17 + aSeed.z * 7.0)) * 26.0;
+    vec2 target = mix(inPanel, dust, aDust);
+    vec2 span = target - pos;
+    vec2 side = vec2(-span.y, span.x);
+    // one shared arc (out to the left and up, then down into the film), each point a little off it: a river
+    vec2 ctrl = pos + span * 0.5 + side * (0.42 + (aSeed.y - 0.5) * 0.36) * (1.0 - aDust);
+    pos = mix(mix(pos, ctrl, fe), mix(ctrl, target, fe), fe);
+
+    // exit: everything still out rises with the page and thins away
+    float ex = uExit * (0.7 + aSeed.y * 0.8);
+    pos.y -= ex * uRes.y * 0.55;
+
+    // the points that pour into the film shrink and fade as they arrive; the dust stays fine and faint
+    float arrive = (1.0 - aDust) * smoothstep(0.62, 1.0, f);
+    vAlpha = g * (1.0 - arrive) * (1.0 - smoothstep(0.0, 0.85, uExit)) * mix(1.0, 0.55, aDust * f);
+    vTone = clamp(aBolt.y * 0.8 + aSeed.z * 0.35, 0.0, 1.0);
+
+    // a little larger in mid-flight, as if they caught the light
+    float size = (1.7 + aSeed.w * 2.8) * mix(1.0, 0.7, aDust * f) * (1.0 - arrive * 0.8) * (1.0 + sin(fe * 3.14159) * 0.5 * (1.0 - aDust));
+    gl_PointSize = size * uPx;
+    gl_Position = vec4(pos.x / uRes.x * 2.0 - 1.0, 1.0 - pos.y / uRes.y * 2.0, 0.0, 1.0);
+  }
+`;
+const pointsFrag = /* glsl */ `
+  uniform vec3 uCyan;
+  uniform vec3 uBlue;
+  uniform vec3 uPink;
+  varying float vAlpha;
+  varying float vTone;
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.0, d);
+    a *= a;
+    // cyan at the top of the bolt, the brand's blue through the middle, pink towards the tail
+    vec3 col = vTone < 0.5 ? mix(uCyan, uBlue, vTone * 2.0) : mix(uBlue, uPink, (vTone - 0.5) * 2.0);
+    // a white-hot core in the bigger points
+    col = mix(col, vec3(1.0), smoothstep(0.18, 0.0, d) * 0.45);
+    gl_FragColor = vec4(col * 1.5, a * vAlpha);
+    #include <colorspace_fragment>
+  }
+`;
+
+// points inside the bolt's two halves, some on their outline so the shape reads crisp
+function sampleBolt(count) {
+  const vb = svgText.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number);
+  const paths = [...svgText.matchAll(/ d="([^"]+)"/g)].map((m) => new Path2D(m[1]));
+  const g = document.createElement('canvas').getContext('2d');
+  g.lineWidth = 5;
+  const out = new Float32Array(count * 2);
+  for (let i = 0; i < count; ) {
+    const x = vb[0] + Math.random() * vb[2];
+    const y = vb[1] + Math.random() * vb[3];
+    const edge = i % 4 === 0; // a quarter of them trace the outline
+    if (paths.some((p) => (edge ? g.isPointInStroke(p, x, y) : g.isPointInPath(p, x, y)))) {
+      out[i * 2] = (x - vb[0]) / vb[2];
+      out[i * 2 + 1] = (y - vb[1]) / vb[3];
+      i++;
+    }
+  }
+  return { points: out, aspect: vb[2] / vb[3] };
+}
+
+export async function createEvolution({ host, canvas, video, poster, lite = false }) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  renderer.setPixelRatio(dpr);
   renderer.outputColorSpace = SRGBColorSpace;
 
   const scene = new Scene();
-  const pmrem = new PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
-  scene.add(new AmbientLight(0xffffff, 0.4));
-  const key = new DirectionalLight(0xffffff, 1.6);
-  key.position.set(-2, 3, 4);
-  scene.add(key);
-
   const camera = new PerspectiveCamera(30, 1, 0.1, 100);
   camera.position.set(0, 0, 10);
 
@@ -116,7 +199,7 @@ export async function createEvolution({ host, canvas, video, poster }) {
   };
   const panel = new Mesh(
     new PlaneGeometry(1, 1, 64, 36),
-    new ShaderMaterial({ uniforms, vertexShader: vert, fragmentShader: frag, transparent: true, depthTest: false, depthWrite: false }),
+    new ShaderMaterial({ uniforms, vertexShader: panelVert, fragmentShader: panelFrag, transparent: true, depthTest: false, depthWrite: false }),
   );
   panel.renderOrder = 1;
   scene.add(panel);
@@ -124,57 +207,67 @@ export async function createEvolution({ host, canvas, video, poster }) {
   video.addEventListener('playing', useVideo);
   if (video.readyState >= 2 && !video.paused) useVideo();
 
-  // ---- the ribbon
-  // It always passes behind the film (the panel draws over it with no depth test), so the two never cut into
-  // each other while the panel bends and travels through the ribbon's path.
-  const ribbonMat = new MeshPhysicalMaterial({
-    vertexColors: true, roughness: 0.42, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.3, envMapIntensity: 0.55,
-  });
-  let ribbon = null;
-  let ribbonCount = 0;
+  // ---- the points of light
+  const COUNT = lite ? 3200 : 6400;
+  const DUST = 0.12;
+  const { points: boltPts, aspect } = sampleBolt(COUNT);
+  const panelPts = new Float32Array(COUNT * 2);
+  const away = new Float32Array(COUNT * 2);
+  const seed = new Float32Array(COUNT * 4);
+  const dust = new Float32Array(COUNT);
+  for (let i = 0; i < COUNT; i++) {
+    panelPts.set([Math.random(), Math.random()], i * 2);
+    const isDust = Math.random() < DUST;
+    dust[i] = isDust ? 1 : 0;
+    // dust keeps to the margins around the film; the cloud that gathers into the bolt starts around it
+    const ax = isDust ? (Math.random() < 0.5 ? Math.random() * 0.14 : 0.86 + Math.random() * 0.14) : 0.45 + Math.random() * 0.55;
+    away.set([isDust ? (Math.random() < 0.3 ? Math.random() : ax) : ax, Math.random()], i * 2);
+    // the delay follows the bolt's diagonal, so the river leaves from its tip first
+    const along = boltPts[i * 2] * 0.35 + (1 - boltPts[i * 2 + 1]) * 0.65;
+    seed.set([gsap.utils.clamp(0, 1, along * 0.8 + Math.random() * 0.2), Math.random(), Math.random(), Math.random() ** 2], i * 4);
+  }
+  const geo = new BufferGeometry();
+  geo.setAttribute('position', new Float32BufferAttribute(new Float32Array(COUNT * 3), 3)); // placed in the shader
+  geo.setAttribute('aBolt', new Float32BufferAttribute(boltPts, 2));
+  geo.setAttribute('aPanel', new Float32BufferAttribute(panelPts, 2));
+  geo.setAttribute('aAway', new Float32BufferAttribute(away, 2));
+  geo.setAttribute('aSeed', new Float32BufferAttribute(seed, 4));
+  geo.setAttribute('aDust', new Float32BufferAttribute(dust, 1));
+  const pu = {
+    uRes: { value: [1, 1] },
+    uBoltRect: { value: [0, 0, 1, 1] },
+    uPanelRect: { value: [0, 0, 1, 1] },
+    uPointer: { value: [-9999, -9999] },
+    uTime: { value: 0 },
+    uGather: { value: 0 },
+    uFlow: { value: 0 },
+    uExit: { value: 0 },
+    uPx: { value: dpr },
+    uCyan: { value: new Color('#7ff3ff') },
+    uBlue: { value: new Color('#2f6bff') },
+    uPink: { value: new Color('#fc39ce') },
+  };
+  const points = new Points(geo, new ShaderMaterial({
+    uniforms: pu, vertexShader: pointsVert, fragmentShader: pointsFrag,
+    transparent: true, depthTest: false, depthWrite: false, blending: AdditiveBlending,
+  }));
+  points.frustumCulled = false; // every position comes from the shader
+  points.renderOrder = 2;
+  scene.add(points);
 
   // world units per pixel on the z = 0 plane
   let W = 1, H = 1, upp = 1;
   const toWorld = (x, y) => [(x - W / 2) * upp, (H / 2 - y) * upp];
 
-  function buildRibbon() {
-    if (ribbon) { ribbon.geometry.dispose(); scene.remove(ribbon); }
-    const depth = Math.min(W, H) * upp * 0.35;
-    const pts = RIBBON.map(([x, y, z]) => { const [wx, wy] = toWorld(x * W, y * H); return new Vector3(wx, wy, z * depth); });
-    const curve = new CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-    const radius = Math.max(6, Math.min(W, H) * 0.0105) * upp;
-    const geo = new TubeGeometry(curve, 720, radius, 20, false);
-    // colour runs along the length of the ribbon
-    const uv = geo.attributes.uv;
-    const col = new Float32Array(uv.count * 3);
-    const c = new Color();
-    for (let i = 0; i < uv.count; i++) {
-      const t = uv.getX(i) * (RIBBON_STOPS.length - 1);
-      const k = Math.min(RIBBON_STOPS.length - 2, Math.floor(t));
-      c.copy(RIBBON_STOPS[k]).lerp(RIBBON_STOPS[k + 1], t - k);
-      col.set([c.r, c.g, c.b], i * 3);
-    }
-    geo.setAttribute('color', new Float32BufferAttribute(col, 3));
-    ribbonCount = geo.index.count;
-    ribbon = new Mesh(geo, ribbonMat);
-    scene.add(ribbon);
-    applyRibbon();
-  }
-
-  // state driven by the scroll timeline in sections.js
+  // state driven by the scroll timeline in evo-section.js
   const state = {
     rect: { x: 0, y: 0, w: 100, h: 56 }, // panel rect in host pixels
+    bolt: { x: 0, y: 0, w: 10, h: 10 }, // the bolt's box in host pixels
     tiltX: 0, tiltY: 0, bend: 0, curl: 0, wipe: 0, alpha: 1,
-    ribbonA: 0, ribbonB: 0, // visible window of the ribbon along its length (0..1)
+    gather: 0, flow: 0, exit: 0,
+    pointer: [-9999, -9999],
+    aspect,
   };
-
-  function applyRibbon() {
-    if (!ribbon) return;
-    const a = Math.floor((state.ribbonA * ribbonCount) / 6) * 6;
-    const b = Math.floor((state.ribbonB * ribbonCount) / 6) * 6;
-    ribbon.geometry.setDrawRange(a, Math.max(0, b - a));
-    ribbon.visible = b - a > 0;
-  }
 
   function resize() {
     W = host.clientWidth;
@@ -184,10 +277,10 @@ export async function createEvolution({ host, canvas, video, poster }) {
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
     upp = (2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360)) / H;
-    buildRibbon();
+    pu.uRes.value = [W, H];
   }
 
-  function frame() {
+  function frame(time) {
     const { x, y, w, h } = state.rect;
     const [cx, cy] = toWorld(x + w / 2, y + h / 2);
     panel.position.set(cx, cy, 0);
@@ -200,7 +293,16 @@ export async function createEvolution({ host, canvas, video, poster }) {
     uniforms.uBend.value = state.bend * h * upp;
     uniforms.uCurl.value = state.curl * h * upp;
     panel.visible = state.alpha > 0.001;
-    applyRibbon();
+
+    const b = state.bolt;
+    pu.uBoltRect.value = [b.x, b.y, b.w, b.h];
+    pu.uPanelRect.value = [x, y, w, h];
+    pu.uPointer.value = state.pointer;
+    pu.uTime.value = time;
+    pu.uGather.value = state.gather;
+    pu.uFlow.value = state.flow;
+    pu.uExit.value = state.exit;
+    points.visible = state.gather > 0 && state.exit < 1;
     renderer.render(scene, camera);
   }
 
@@ -208,6 +310,9 @@ export async function createEvolution({ host, canvas, video, poster }) {
   const start = () => { if (!running) { running = true; gsap.ticker.add(frame); } };
   const stop = () => { if (running) { running = false; gsap.ticker.remove(frame); } };
   resize();
+  // compile both programs and upload the poster now: the panel first shows mid-scroll, where a stall would show
+  renderer.compile(scene, camera);
+  renderer.initTexture(posterTex);
   const ro = new ResizeObserver(resize);
   ro.observe(host);
   const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), { threshold: 0 });
@@ -219,6 +324,7 @@ export async function createEvolution({ host, canvas, video, poster }) {
     dispose() {
       stop(); ro.disconnect(); io.disconnect();
       video.removeEventListener('playing', useVideo);
+      geo.dispose();
       renderer.dispose(); renderer.forceContextLoss();
     },
   };
