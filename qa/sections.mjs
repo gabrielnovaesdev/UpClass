@@ -15,7 +15,7 @@ else await page.setViewport({ width: 1440, height: 900 });
 await page.evaluateOnNewDocument(() => sessionStorage.setItem('upc-intro', '1'));
 await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2', timeout: 90000 });
 await new Promise((r) => setTimeout(r, 3000));
-const names = await page.evaluate(() => [...document.querySelectorAll('main > section')].map((s) => s.className.split(' ')[0]));
+const names = await page.evaluate(() => [...document.querySelectorAll('main > section, main > .flow > section')].map((s) => s.className.split(' ')[0]));
 for (const [i, n] of names.entries()) {
   await page.evaluate(async (n) => {
     const y = document.querySelector(`.${n}`).getBoundingClientRect().top + scrollY + innerHeight * 0.6;

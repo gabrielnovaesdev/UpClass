@@ -12,7 +12,7 @@ export function initNav({ lenis }) {
   }
 
   // Sections declare their tone; the capsule follows whichever one sits under it.
-  document.querySelectorAll('main > section:not(.hero)[data-theme], body > footer[data-theme]').forEach((sec) => {
+  document.querySelectorAll('main section:not(.hero)[data-theme], body > footer[data-theme]').forEach((sec) => {
     ScrollTrigger.create({
       trigger: sec,
       start: 'top 40px',

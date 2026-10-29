@@ -184,7 +184,17 @@
       </dialog>
     </section>
 
-    <section class="name atmo" id="nome" data-theme="light" aria-labelledby="name-title">
+    <!-- one continuous light space: the name, the details, the collection and the moments share a single sky
+         (mist, glows and the drifting brand pieces) that stays on screen while they scroll through it -->
+    <div class="flow">
+      <div class="flow__sky" aria-hidden="true">
+        <div class="flow__glow flow__glow--warm"></div>
+        <div class="flow__glow flow__glow--pink"></div>
+        <div class="flow__glow flow__glow--cool"></div>
+        <canvas class="flow__gl"></canvas>
+      </div>
+
+    <section class="name" id="nome" data-theme="light" aria-labelledby="name-title">
       <div class="name__pin">
         <h2 class="sr-only" id="name-title">Up mais Class: o significado do nome Upclass</h2>
         <div class="name__word" aria-hidden="true">
@@ -204,7 +214,7 @@
       </div>
     </section>
 
-    <section class="detail atmo" id="simbolo" data-theme="light" aria-labelledby="detail-title">
+    <section class="detail" id="simbolo" data-theme="light" aria-labelledby="detail-title">
       <div class="detail__pin">
         <!-- the brand's objects in depth: each word gets its own, a field of small pieces keeps drifting around them (detail.js) -->
         <canvas class="detail__gl" aria-hidden="true"></canvas>
@@ -214,27 +224,27 @@
         </header>
         <ol class="detail__list">
           <li class="detail__item">
-            <h3 class="detail__word">Construção</h3>
-            <p class="detail__text">Cada curva e cada ângulo do símbolo nascem de uma construção precisa.</p>
+            <h3 class="detail__word">Procedência</h3>
+            <p class="detail__text">Aparelhos com origem comprovada e responsabilidade em cada etapa.</p>
           </li>
           <li class="detail__item">
-            <h3 class="detail__word">Dois raios</h3>
-            <p class="detail__text">Muito mais do que energia: ícones de upgrade, evolução e potência. Rápido, impactante, transformador.</p>
+            <h3 class="detail__word">Precisão</h3>
+            <p class="detail__text">Como cada curva e cada ângulo do símbolo, cada escolha nasce de uma construção precisa.</p>
           </li>
           <li class="detail__item">
-            <h3 class="detail__word">Upgrade</h3>
-            <p class="detail__text">Setas embutidas apontam para cima e para baixo: atualização constante, evolução em fluxo.</p>
+            <h3 class="detail__word">iPhone</h3>
+            <p class="detail__text">O modelo certo para o seu momento, com a orientação de quem entende.</p>
           </li>
           <li class="detail__item">
-            <h3 class="detail__word">Celular</h3>
-            <p class="detail__text">Entre os raios, de forma sutil, surge a forma de um telefone — o produto central da marca.</p>
+            <h3 class="detail__word">Pós-venda</h3>
+            <p class="detail__text">Atendimento próximo, humano e contínuo depois da compra. A relação não termina no caixa.</p>
           </li>
         </ol>
         <img class="detail__fallback" src="/img/bolt-art-700.webp" alt="" width="409" height="701" loading="lazy" decoding="async" />
       </div>
     </section>
 
-    <section class="collection atmo" id="colecao" data-theme="light" aria-labelledby="collection-title">
+    <section class="collection" id="colecao" data-theme="light" aria-labelledby="collection-title">
       <div class="collection__pin">
         <div class="collection__head">
           <h2 class="collection__title" id="collection-title">O que você encontra na Upclass</h2>
@@ -282,7 +292,7 @@
       </div>
     </section>
 
-    <section class="moments atmo" id="momentos" data-theme="light" aria-labelledby="moments-title">
+    <section class="moments" id="momentos" data-theme="light" aria-labelledby="moments-title">
       <div class="moments__head">
         <h2 class="moments__title" id="moments-title">Cada cliente chega em um momento. Todos saem com a mesma certeza.</h2>
       </div>
@@ -333,6 +343,7 @@
         <div class="moments__shot"><picture><source type="image/avif" srcset="/img/mk/headphones-800.avif 800w, /img/mk/headphones-1600.avif 1600w" sizes="26vw" /><img src="/img/mk/headphones-800.webp" srcset="/img/mk/headphones-800.webp 800w, /img/mk/headphones-1600.webp 1600w" sizes="26vw" alt="" width="800" height="800" loading="lazy" decoding="async" /></picture></div>
       </div>
     </section>
+    </div>
 
     <section class="promise" id="diferenciais" data-theme="dark" aria-labelledby="promise-title">
       <div class="promise__head">
