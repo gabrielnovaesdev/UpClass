@@ -1,14 +1,20 @@
 import {
+  AdditiveBlending,
+  BackSide,
   CanvasTexture,
   CylinderGeometry,
+  DoubleSide,
   ExtrudeGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
   MeshPhysicalMaterial,
   PlaneGeometry,
+  PMREMGenerator,
+  Scene,
   Shape,
   ShapeGeometry,
+  SphereGeometry,
   SRGBColorSpace,
 } from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -153,24 +159,52 @@ function logoMask() {
   });
 }
 
-export function makeIphone(screenTex) {
+/* What the iPhone reflects: a product-shot studio rather than the page's even mist. A quieter lavender surround with
+   a large softbox above and long white strips at the sides, so the titanium, the glass and the cover catch crisp
+   highlights against darker reflections instead of one flat tone. Only the iPhone uses it; the other objects keep
+   the shared studio (heroes3d.js). */
+function phoneEnvironment(renderer) {
+  const studio = new Scene();
+  studio.add(new Mesh(new SphereGeometry(10, 32, 16), new MeshBasicMaterial({ color: 0x9c9ab4, side: BackSide })));
+  const light = (color, k, x, y, z, w, h) => {
+    const m = new Mesh(new PlaneGeometry(w, h), new MeshBasicMaterial({ color, side: DoubleSide }));
+    m.material.color.multiplyScalar(k);
+    m.position.set(x, y, z);
+    m.lookAt(0, 0, 0);
+    studio.add(m);
+  };
+  light(0xffffff, 3.2, -2, 7, 4, 8, 4); // softbox above, a little to the left, like the key light
+  light(0xffffff, 2.6, 6, 0, 5, 1.2, 12); // long strip front right: the line down the frame and across the glass
+  light(0xffffff, 1.8, -7, 0, 2, 1, 10); // thinner strip on the left
+  light(0xffd9f2, 1.4, -6, -3, -5, 5, 6); // brand tints behind, faint
+  light(0xd6e2ff, 1.4, 6, 3, -5, 5, 6);
+  light(0xeeeefa, 1.2, 0, -7, 2, 10, 3); // a light floor, so no dark outline along the lower edges
+  const pmrem = new PMREMGenerator(renderer);
+  const env = pmrem.fromScene(studio, 0.02).texture;
+  pmrem.dispose();
+  return env;
+}
+
+export function makeIphone(screenTex, renderer) {
   const phone = new Group();
 
   // ---- materials
-  // brushed titanium: satin metal, a little lighter along the brushing
+  // brushed titanium: satin metal, a little lighter along the brushing; it lives on its reflections, so it takes the
+  // studio a little brighter than the other objects do
   const titanium = new MeshPhysicalMaterial({
-    color: TITANIUM, metalness: 1, roughness: 0.3, anisotropy: 0.65, clearcoat: 0.25, clearcoatRoughness: 0.35, envMapIntensity: 1.25,
+    color: TITANIUM, metalness: 1, roughness: 0.22, anisotropy: 0.65, clearcoat: 0.4, clearcoatRoughness: 0.2, envMapIntensity: 1.9,
   });
-  // the back: textured matte glass, the colour of the frame a shade lighter
+  // the back: textured matte glass (a dielectric, so no metalness: that only greyed it), the colour of the frame a
+  // shade lighter, with a soft satin sheen from the coat
   const backGlass = new MeshPhysicalMaterial({
-    color: 0xffffff, map: backTexture(), metalness: 0.35, roughness: 0.42, clearcoat: 0.4, clearcoatRoughness: 0.5, envMapIntensity: 1.1,
+    color: 0xffffff, map: backTexture(), metalness: 0, roughness: 0.38, clearcoat: 0.7, clearcoatRoughness: 0.28, envMapIntensity: 1.5,
   });
   // the camera plateau is polished glass of the same tint
   const plateauGlass = new MeshPhysicalMaterial({
-    color: 0xc9b9a8, metalness: 0.35, roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.2,
+    color: 0xd6c7b6, metalness: 0.2, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.7,
   });
-  const ringMat = new MeshPhysicalMaterial({ color: 0xd2c0ad, metalness: 0.75, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08 });
-  const lensMat = new MeshPhysicalMaterial({ map: lensTexture(), metalness: 0.2, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 0.9 });
+  const ringMat = new MeshPhysicalMaterial({ color: 0xdccbb8, metalness: 0.85, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.8 });
+  const lensMat = new MeshPhysicalMaterial({ map: lensTexture(), metalness: 0.2, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.4 });
   const darkMat = new MeshPhysicalMaterial({ color: 0x14141a, metalness: 0.4, roughness: 0.25, clearcoat: 1 });
 
   // ---- body: flat titanium sides, softened edges
@@ -183,7 +217,13 @@ export function makeIphone(screenTex) {
   glassFront.position.z = 0.0012;
   const screen = new Mesh(panel(W - 2 * BEVEL - 2.6 * MM, H - 2 * BEVEL - 2.6 * MM, R - BEVEL - 1.2 * MM), new MeshBasicMaterial({ map: screenTex, toneMapped: false }));
   screen.position.z = 0.0018;
-  front.add(glassFront, screen);
+  // the cover glass over the screen: black and added on top, so only its reflection of the studio shows
+  const cover = new Mesh(panel(W - 2 * BEVEL - 0.002, H - 2 * BEVEL - 0.002, R - BEVEL), new MeshPhysicalMaterial({
+    color: 0x000000, roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.6,
+    transparent: true, blending: AdditiveBlending, depthWrite: false,
+  }));
+  cover.position.z = 0.0024;
+  front.add(glassFront, screen, cover);
   phone.add(front);
 
   // ---- back, laid out as you see it from behind (camera top left)
@@ -269,6 +309,11 @@ export function makeIphone(screenTex) {
       phone.add(h);
     }
   });
+
+  if (renderer) {
+    const env = phoneEnvironment(renderer);
+    phone.traverse((o) => { if (o.material?.isMeshStandardMaterial) o.material.envMap = env; });
+  }
 
   phone.userData.height = H;
   return phone;

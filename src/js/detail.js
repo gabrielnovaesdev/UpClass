@@ -82,9 +82,10 @@ export function initDetail({ reduce, finePointer, lenis }) {
     flights[i].go = true;
     // glide back onto the word if the scroll went a little past it, then keep the page still. Lenis does it on
     // desktop; with native scrolling (touch) the frame loop pulls the page onto the word and keeps it there, which
-    // also stops the momentum of a flick that blocking the events alone would let through
+    // also stops the momentum of a flick that blocking the events alone would let through. The scrollbar stays
+    // visible (.is-holding); a drag on it is pulled back the same way
+    root.classList.add('is-holding');
     if (lenis) lenis.scrollTo(holdY, { duration: 0.9, lock: true, force: true, onComplete: () => { if (held === i) lenis.stop(); } });
-    else root.classList.add('is-holding');
   }
   function release() {
     held = -1;
@@ -109,7 +110,7 @@ export function initDetail({ reduce, finePointer, lenis }) {
       }
     }
     prevTarget = target;
-    if (held >= 0 && !lenis) {
+    if (held >= 0 && (!lenis || lenis.isStopped)) {
       const y = window.scrollY;
       if (Math.abs(holdY - y) > 0.5) window.scrollTo(0, y + (holdY - y) * (1 - Math.exp(-dt * 9)));
     }

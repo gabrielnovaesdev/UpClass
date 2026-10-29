@@ -24,7 +24,7 @@ export function initSections({ reduce, lenis, finePointer }) {
   else evolutionFlat({ reduce });
   footerBasics({ lenis, reduce });
   initMorph({ reduce });
-  if (finePointer) momentsCursor();
+  if (finePointer) momentsCursor({ reduce });
   initFlow({ reduce, finePointer });
   if (reduce) return;
 
@@ -187,39 +187,97 @@ function collection(wide) {
 
 /* ---- 06 Moments: calm rows; the picture follows the cursor on desktop */
 function moments() {
-  gsap.from('.moments__title', {
-    yPercent: 25, autoAlpha: 0, filter: 'blur(12px)', duration: 1.6, ease: 'expo.out', clearProps: 'filter',
-    scrollTrigger: { trigger: '.moments__head', start: 'top 80%', once: true },
+  // the heading rises line by line, each one out of its own mask
+  SplitText.create('.moments__title', { type: 'lines', mask: 'lines', autoSplit: true, onSplit: (self) =>
+    gsap.from(self.lines, {
+      yPercent: 105, duration: 1.4, ease: 'expo.out', stagger: 0.09,
+      scrollTrigger: { trigger: '.moments__head', start: 'top 80%', once: true },
+    }),
   });
   document.querySelectorAll('.moment').forEach((row) => {
-    gsap.fromTo(row.querySelectorAll('.moment__num, .moment__title, .moment__text, .moment__media'), { y: 26, autoAlpha: 0 }, {
+    gsap.fromTo(row.querySelectorAll('.moment__title, .moment__text, .moment__media'), { y: 26, autoAlpha: 0 }, {
       y: 0, autoAlpha: 1, duration: 1.1, ease: 'expo.out', stagger: 0.06,
+      clearProps: 'transform,opacity,visibility', // hand the row back to the CSS focus states
       scrollTrigger: { trigger: row, start: 'top 88%', once: true },
     });
   });
 }
 
-function momentsCursor() {
+// The print opens from its centre, leans in 3D with the pointer's motion and the picture drifts the other way inside
+// it, so it reads as a photograph held up beside the row. Keyboard focus brings it beside the focused row's title.
+function momentsCursor({ reduce }) {
   const list = document.querySelector('.moments__list');
   const box = document.querySelector('.moments__cursor');
   const shots = [...box.children];
   const rows = [...list.children];
   const xTo = gsap.quickTo(box, 'x', { duration: 0.7, ease: 'power3.out' });
   const yTo = gsap.quickTo(box, 'y', { duration: 0.7, ease: 'power3.out' });
-  const rTo = gsap.quickTo(box, 'rotate', { duration: 0.9, ease: 'power3.out' });
-  let lastX = 0;
-  gsap.set(box, { xPercent: -50, yPercent: -50, scale: 0.6, autoAlpha: 0 });
+  const tilt = { duration: 0.9, ease: 'power3.out' };
+  const ryTo = gsap.quickTo(box, 'rotationY', tilt);
+  const rxTo = gsap.quickTo(box, 'rotationX', tilt);
+  const rzTo = gsap.quickTo(box, 'rotation', tilt);
+  const pxTo = gsap.quickTo(shots, 'xPercent', { duration: 1.2, ease: 'power3.out' });
+  const pyTo = gsap.quickTo(shots, 'yPercent', { duration: 1.2, ease: 'power3.out' });
+  const closed = 'inset(50% 50% 50% 50% round 14px)';
+  const open = 'inset(0% 0% 0% 0% round 14px)';
+  gsap.set(box, { xPercent: -50, yPercent: -50, transformPerspective: 700, autoAlpha: 0, scale: 0.9, clipPath: reduce ? open : closed });
 
-  rows.forEach((row, i) =>
-    row.addEventListener('pointerenter', () => shots.forEach((s, k) => s.classList.toggle('is-on', k === i))),
-  );
-  list.addEventListener('pointerenter', () => gsap.to(box, { autoAlpha: 1, scale: 1, duration: 0.6, ease: 'expo.out' }));
-  list.addEventListener('pointerleave', () => gsap.to(box, { autoAlpha: 0, scale: 0.6, duration: 0.5, ease: 'power2.in' }));
+  let half = 0; // half the print's width, read once per visit rather than on every move
+  let shown = false;
+  const pick = (i) => shots.forEach((s, k) => s.classList.toggle('is-on', k === i));
+  const show = () => {
+    if (shown) return;
+    shown = true;
+    half = box.offsetWidth / 2;
+    gsap.to(box, { autoAlpha: 1, scale: 1, clipPath: open, duration: reduce ? 0.3 : 0.8, ease: 'expo.out', overwrite: 'auto' });
+  };
+  const hide = () => {
+    if (!shown) return;
+    shown = false;
+    gsap.to(box, { autoAlpha: 0, scale: 0.9, clipPath: reduce ? open : closed, duration: 0.45, ease: 'power2.in', overwrite: 'auto' });
+  };
+  const settle = () => { ryTo(0); rxTo(0); rzTo(0); pxTo(0); pyTo(0); };
+
+  rows.forEach((row, i) => {
+    row.addEventListener('pointerenter', () => pick(i));
+    row.addEventListener('focus', () => {
+      pick(i);
+      show();
+      // beside the end of the title's words (not its column), centred on the row
+      const range = document.createRange();
+      range.selectNodeContents(row.querySelector('.moment__title'));
+      const r = row.getBoundingClientRect();
+      xTo(range.getBoundingClientRect().right + half + 28);
+      yTo(r.top + r.height / 2);
+      settle();
+    });
+  });
+  list.addEventListener('focusout', (e) => { if (!list.contains(e.relatedTarget) && !list.matches(':hover')) hide(); });
+  list.addEventListener('pointerenter', show);
+  list.addEventListener('pointerleave', () => { if (!list.contains(document.activeElement)) hide(); settle(); });
+
+  let lastX = 0;
+  let lastY = 0;
+  let rest = 0;
   list.addEventListener('pointermove', (e) => {
-    xTo(e.clientX + window.innerWidth * 0.14);
+    show();
+    // when the pointer stops, the print comes back to rest
+    clearTimeout(rest);
+    rest = setTimeout(settle, 120);
+    // just right of the pointer, whatever the print's size
+    xTo(e.clientX + half + 28);
     yTo(e.clientY);
-    rTo(gsap.utils.clamp(-8, 8, (e.clientX - lastX) * 0.4));
+    if (!reduce) {
+      const vx = gsap.utils.clamp(-30, 30, e.clientX - lastX);
+      const vy = gsap.utils.clamp(-30, 30, e.clientY - lastY);
+      ryTo(vx * 0.5);
+      rxTo(-vy * 0.4);
+      rzTo(vx * 0.12);
+      pxTo(-vx * 0.12);
+      pyTo(-vy * 0.12);
+    }
     lastX = e.clientX;
+    lastY = e.clientY;
   });
 }
 

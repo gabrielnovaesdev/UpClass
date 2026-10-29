@@ -135,7 +135,7 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
   // ---- the four protagonists, in the order of the words (heroes3d.js, iphone3d.js)
   const boltImg = await loadImage('/img/bolt-art-700.webp');
   await document.fonts?.ready; // the name on the bag is drawn in Ibrand
-  const phone = makeIphone(screenTexture(boltImg));
+  const phone = makeIphone(screenTexture(boltImg), renderer);
   const heroes = [
     { obj: phone, height: phone.userData.height, svg: false }, // iPhone
     makeBadge(), // Procedência
