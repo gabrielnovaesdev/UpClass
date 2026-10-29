@@ -9,6 +9,7 @@ Visão geral, comandos e estrutura estão no [README.md](README.md). Este arquiv
 - Não expor dados internos da marca (market share, concorrentes, público-alvo).
 - Contatos ficam só em `src/js/config.js`; vazios aparecem como "em breve".
 - Intro, menu e hero estão aprovados: não alterar visualmente.
+- Seções minimalistas e clean, sem textos acessórios: nada de rótulos de seção ("( 02 — … )"), subtítulos que só descrevem a seção, HUDs de player ("Filme da marca", cronômetro), contadores ("01 / 04") ou tickers decorativos.
 
 ## Processo testador
 
@@ -37,6 +38,7 @@ node qa/shoot.mjs desktop .sym ./qa-out/sym 12 4.2   # capturas passo a passo de
 node qa/shoot.mjs mobile .evo ./qa-out/evo-m 8 1.6
 node qa/shoot.mjs desktop-reduce .sym ./qa-out/sym-r 3 1
 node qa/interact.mjs                                  # toque, teclado, player no celular e ordem das seções
+node qa/sections.mjs desktop                         # uma captura por seção + console (também: mobile)
 ```
 
 ## Git

@@ -2,7 +2,6 @@
    Rhythm: strong (film, symbol, collection, upgrade, belong) alternates with calm (manifesto, name,
    moments, values) so the motion leads the eye without crowding it. */
 
-.section-label { opacity: 0.6; }
 
 /* accent word: brand light running through the letters (Ibrand has no italic) */
 .manifesto em, .promise em, .belong em, .closing em,
@@ -32,7 +31,6 @@
   padding: calc(var(--nav-h) + 5vh) var(--gutter) 6vh;
 }
 .manifesto__top { display: flex; justify-content: space-between; gap: 24px; }
-.manifesto__kicker { opacity: 0.6; }
 .manifesto__title {
   align-self: center;
   font-family: var(--display);
@@ -63,9 +61,7 @@
 }
 .evo__intro { display: grid; gap: 18px; padding: 0 var(--gutter); max-width: 46rem; }
 .evo__title { font-family: var(--display); font-size: clamp(38px, 5.4vw, 104px); line-height: 0.95; letter-spacing: -0.035em; max-width: 8.6em; }
-.evo__lead { max-width: 27em; font-size: clamp(15px, 1.1vw, 18px); line-height: 1.55; opacity: 0.72; }
-.evo__slot, .evo__gl, .evo__words, .evo__lead-gl { display: none; }
-.evo.is-gl .evo__lead-gl { display: inline; }
+.evo__slot, .evo__gl, .evo__words { display: none; }
 
 .evo__player {
   position: relative; margin: 6vh var(--gutter) 0; aspect-ratio: 16 / 9; overflow: hidden;
@@ -73,22 +69,6 @@
   box-shadow: 0 40px 120px -40px rgba(6, 63, 241, 0.55);
 }
 .evo__player .film__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.evo__hud {
-  position: absolute; left: 0; right: 0; top: 0; z-index: 1; display: flex; justify-content: space-between;
-  padding: clamp(12px, 1.2vw, 20px) clamp(14px, 1.4vw, 24px);
-  background: linear-gradient(rgba(0, 2, 41, 0.55), transparent); pointer-events: none;
-}
-.evo__rec { display: inline-flex; align-items: center; gap: 8px; }
-.evo__rec i { width: 7px; height: 7px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 12px var(--pink); animation: evo-rec 1.6s ease-in-out infinite; }
-.film__time { font-variant-numeric: tabular-nums; opacity: 0.85; }
-
-/* phones: a ticker runs along the film, as a strip of light */
-.evo__ticker {
-  margin: 18px 0 0; overflow: hidden; white-space: nowrap; display: flex;
-  font-family: var(--text); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.6;
-}
-.evo__ticker span { flex: none; animation: evo-ticker 18s linear infinite; }
-
 .film__foot { display: flex; align-items: center; gap: 14px; margin: 22px var(--gutter) 0; }
 .evo__play {
   flex: none; width: 52px; height: 52px; border-radius: 50%;
@@ -138,11 +118,8 @@
   position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform, opacity;
   font-family: var(--display); font-size: clamp(40px, 5.2vw, 104px); line-height: 1; letter-spacing: -0.035em; color: var(--light);
 }
-.evo.is-gl .evo__ticker { display: none; }
 .evo.is-gl .film__foot { position: absolute; z-index: 4; left: 0; right: 0; bottom: 3.2vh; margin: 0; padding: 0 var(--gutter); }
 
-@keyframes evo-ticker { to { transform: translateX(-100%); } }
-@keyframes evo-rec { 50% { opacity: 0.25; } }
 
 /* ---------------------------------------------------------------- 03 Name: up + class become one word */
 
@@ -206,7 +183,6 @@
 
 .sym__head { position: relative; z-index: 1; display: grid; gap: 18px; align-content: start; }
 .sym__title { font-family: var(--display); font-size: clamp(34px, 3.8vw, 72px); line-height: 0.98; letter-spacing: -0.03em; max-width: 9em; }
-.sym__lead-text { max-width: 26em; font-size: 15px; line-height: 1.55; opacity: 0.7; }
 
 .sym__chapters { position: relative; z-index: 1; grid-row: 2; list-style: none; margin: 0; padding: 0; align-self: end; display: grid; gap: 2px; max-width: 34rem; }
 .sym__chapter button { display: flex; align-items: baseline; gap: 18px; width: 100%; padding: 8px 0; text-align: left; opacity: 0.36; transition: opacity 0.5s var(--ease-out); }
@@ -220,7 +196,6 @@
 }
 .sym__chapter.is-active p { opacity: 0.74; max-height: 9em; margin-top: 4px; margin-bottom: 12px; }
 .sym__outro { position: relative; z-index: 1; grid-row: 3; margin-top: 4vh; max-width: 30em; font-size: 14px; line-height: 1.55; opacity: 0.55; }
-.sym__count { position: absolute; z-index: 1; right: var(--gutter); bottom: 6vh; opacity: 0.6; font-variant-numeric: tabular-nums; }
 
 /* the flat artwork stands in until the 3D mark is ready, and for good without WebGL */
 .sym:not(.is-ready) .sym__gl, .sym.is-flat .sym__gl { visibility: hidden; }
@@ -316,7 +291,6 @@
 .promise { position: relative; background: var(--ink); color: var(--light); padding: calc(var(--nav-h) + 8vh) var(--gutter) 10vh; overflow: hidden; }
 .promise::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(50% 40% at 80% 10%, rgba(6, 63, 241, 0.28), transparent 70%); }
 .promise__head { position: relative; display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--gutter); align-items: end; margin-bottom: 7vh; }
-.promise__head .section-label { grid-column: 1 / -1; }
 .promise__title { font-family: var(--display); font-size: clamp(36px, 4.6vw, 88px); line-height: 0.98; letter-spacing: -0.03em; max-width: 11em; }
 .promise__lead { font-size: clamp(15px, 1.1vw, 18px); line-height: 1.55; opacity: 0.72; max-width: 26em; }
 .bento { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: clamp(220px, 21vw, 400px); gap: clamp(10px, 1vw, 16px); }
@@ -373,8 +347,8 @@
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 24px;
 }
 .upgrade__note { line-height: 1.55; opacity: 0.75; }
-.upgrade__note--end { text-align: right; }
-.upgrade__title { font-family: var(--display); font-size: clamp(30px, 3.3vw, 60px); line-height: 1; letter-spacing: -0.025em; text-align: center; max-width: 13em; text-shadow: 0 2px 30px rgba(0, 2, 41, 0.6); }
+.upgrade__note--end { grid-column: 3; text-align: right; }
+.upgrade__title { grid-column: 2; font-family: var(--display); font-size: clamp(30px, 3.3vw, 60px); line-height: 1; letter-spacing: -0.025em; text-align: center; max-width: 13em; text-shadow: 0 2px 30px rgba(0, 2, 41, 0.6); }
 
 /* ---------------------------------------------------------------- 09 Values: calm */
 
@@ -545,7 +519,6 @@
   .sym__chapter button { padding: 10px 0; min-height: 44px; }
   .sym__chapter p { margin-left: 0; }
   .sym__outro { order: 4; margin-top: 0; }
-  .sym__count { display: none; }
   .sym__tag { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(241, 239, 250, 0.1); }
 
   .collection__pin { height: auto; padding: calc(var(--nav-h) + 6vh) 0 10vh; }
@@ -571,8 +544,8 @@
   .tile--quote { min-height: 52vw; }
 
   .upgrade__copy { grid-template-columns: 1fr; justify-items: start; gap: 14px; }
-  .upgrade__title { text-align: left; }
-  .upgrade__note--end { text-align: left; }
+  .upgrade__title { grid-column: 1; text-align: left; }
+  .upgrade__note--end { grid-column: 1; text-align: left; }
   .upgrade__marquee { font-size: 30vw; }
 
   .values__mv { grid-template-columns: 1fr; gap: 36px; }
@@ -597,6 +570,5 @@
 @media (prefers-reduced-motion: reduce) {
   .hero__scroll i, .hero__shadow, .footer__ticker { animation: none; }
   .menu { transition: none; }
-  .evo__ticker span, .evo__rec i { animation: none; }
   .upgrade__window { -webkit-mask: none; mask: none; }
 }
