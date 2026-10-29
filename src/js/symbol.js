@@ -50,7 +50,6 @@ export function initSymbol({ reduce, lenis, wide }) {
   const tag = section.querySelector('.sym__tag');
   const tagText = section.querySelector('.sym__tag-text');
   const items = [...section.querySelectorAll('.sym__chapter')];
-  const count = section.querySelector('.sym__count-n');
 
   const gl = !reduce && canRunGL();
   const pinned = gl && wide;
@@ -112,7 +111,6 @@ export function initSymbol({ reduce, lenis, wide }) {
       li.classList.toggle('is-active', k === c);
       li.querySelector('button').setAttribute('aria-pressed', String(k === c));
     });
-    count.textContent = `0${c + 1}`;
     tagText.textContent = items[c].dataset.tag;
     tagSize = [tag.offsetWidth, tag.offsetHeight];
   }

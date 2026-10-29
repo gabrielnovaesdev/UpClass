@@ -19,20 +19,17 @@ export function canRunGL() {
   }
 }
 
-/* ---- controls: play/pause, chapters, running clock (all layouts) */
+/* ---- controls: play/pause and chapters with their progress (all layouts) */
 export function filmControls() {
   const video = document.querySelector('.film__video');
   const buttons = [...document.querySelectorAll('.film__chapters button')];
   const play = document.querySelector('.evo__play');
-  const time = document.querySelector('.film__time');
   const marks = buttons.map((b) => +b.dataset.t);
-  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   let userPaused = false;
 
   video.addEventListener('timeupdate', () => {
     const t = video.currentTime;
     const end = video.duration || 57.28;
-    time.textContent = `${fmt(t)} / ${fmt(end)}`;
     buttons.forEach((b, i) => {
       const a = marks[i];
       const z = marks[i + 1] ?? end;
@@ -179,7 +176,7 @@ export async function evolutionStage({ videos }) {
 /* ---- phones, reduced motion, no WebGL: a calm reveal */
 export function evolutionFlat({ reduce }) {
   if (reduce) return;
-  gsap.from(['.evo__intro > *', '.evo__player', '.evo__ticker', '.film__foot'], {
+  gsap.from(['.evo__intro > *', '.evo__player', '.film__foot'], {
     y: 36, autoAlpha: 0, duration: 1.2, ease: 'expo.out', stagger: 0.08,
     scrollTrigger: { trigger: '.evo', start: 'top 70%', once: true },
   });
