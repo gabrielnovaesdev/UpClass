@@ -47,8 +47,11 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     : Promise.resolve(document.documentElement.classList.add('no-webgl'));
 
   // ---- Light that follows the cursor across the wordmark; it rests behind the bolt when idle
+  // (it repaints the whole wordmark, so only while the light is actually moving, and never during the hand-over)
   const light = { x: 50, y: 52, tx: 50, ty: 52 };
+  let leaving = false;
   gsap.ticker.add(() => {
+    if (leaving || (Math.abs(light.tx - light.x) < 0.02 && Math.abs(light.ty - light.y) < 0.02)) return;
     light.x += (light.tx - light.x) * 0.08;
     light.y += (light.ty - light.y) * 0.08;
     word.style.setProperty('--mx', `${light.x.toFixed(2)}%`);
@@ -76,41 +79,50 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     });
   }
 
-  // ---- Scroll: the hero pins and the bolt makes a full turn; then everything travels up with the scroll — the wordmark
-  //      comes closer and rises out of the frame, the bolt follows it, the dark ground lifts away — and the manifesto,
-  //      already waiting underneath on the light mist, rises into place (its half lives in sections.js, manifesto()).
-  //      A short scrub keeps it close to the finger and the wheel.
+  // ---- Scroll: the hand-over to the manifesto, in the language of the film section's way out.
+  //      1. the copy goes, the wordmark and the bolt rise out of the frame (the bolt finishing its turn), and the glow
+  //         behind them goes down to the plain dark ground — dark on dark, never a grey wash;
+  //      2. the dark curtain lifts away under its soft edge (a transform, no repaint) and the manifesto, already
+  //         waiting underneath on the light mist (sections.js, manifesto()), is simply there.
+  //      Everything that moves is its own layer and moves by transform and opacity only.
   const object = hero.querySelector('.hero__object');
   const content = hero.querySelector('.hero__content');
+  const ground = hero.querySelector('.hero__ground');
   const vh = () => window.innerHeight;
-  gsap.set(word, { '--stroke': 'rgba(241, 239, 250, 0.24)' });
+  // The curtain starts as soon as the manifesto sits fully under the screen (the last screen of the pin, see
+  // .motion .manifesto: from 0.7 / 1.7 on); its edge comes up from below while the bolt is still leaving at the top.
+  const PIN = 1.7; // screens
+  const LIFT = [0.42, 0.92];
+  const liftEase = gsap.parseEase('power1.inOut');
+  const lift = (p) => liftEase(gsap.utils.clamp(0, 1, (p - LIFT[0]) / (LIFT[1] - LIFT[0])));
   gsap.timeline({
     scrollTrigger: {
       trigger: hero,
       start: 'top top',
-      end: () => `+=${vh() * 1.5}`,
+      end: () => `+=${vh() * PIN}`,
       pin: true,
-      scrub: finePointer ? 0.35 : 0.2,
+      scrub: finePointer ? 0.6 : 0.3,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
-        bolt?.scroll(self.progress);
-        nav.setTheme(self.progress > 0.6 ? 'light' : 'dark');
+        const p = self.progress;
+        bolt?.scroll((p / 0.62) * 0.8); // the full turn is done as it leaves the frame
+        bolt?.hold(p > 0.7);
+        if (leaving !== p > 0.01) { leaving = p > 0.01; hero.classList.toggle('is-leaving', leaving); }
+        // the capsule turns light once the curtain's edge has passed under it
+        nav.setTheme(lift(p) > 0.75 ? 'light' : 'dark');
       },
     },
   })
-    .to(bg, { scale: 1.1, ease: 'none', duration: 1 }, 0)
-    .to(content, { y: () => -vh() * 0.3, autoAlpha: 0, ease: 'power1.in', duration: 0.38 }, 0)
-    .to(word, { y: () => -vh() * 1.1, scale: 1.6, ease: 'power2.in', duration: 0.9 }, 0)
-    .to(object, { y: () => -vh() * 1.25, scale: 1.3, ease: 'power2.in', duration: 0.86 }, 0.06)
-    // the dark ground lifts away under a soft edge (no grey cross-fade): the light manifesto shows from the bottom
-    // (it starts once the manifesto sits fully under the screen: a third of the pin, see .motion .manifesto)
-    .set(stage, { backgroundColor: 'rgba(0, 2, 41, 0)' }, 0.42)
-    .fromTo(bg, { '--lift': '0%' }, { '--lift': '100%', ease: 'power1.inOut', duration: 0.48 }, 0.42)
-    .set(bg, { autoAlpha: 0 }, 0.9) // swept away: drop the layer so its composited edge leaves no trace
-    .to(stage, { '--grain': 0, ease: 'none', duration: 0.4 }, 0.44)
-    .to(word, { '--stroke': 'rgba(0, 2, 41, 0.3)', ease: 'none', duration: 0.4 }, 0.46)
-    // hold on the empty, light frame so the scrub lag never shows a remnant of the hero when the pin lets go
-    .to({}, { duration: 0.22 });
+    // (opacity, not autoAlpha: flipping visibility at zero rebuilds the layers mid-scroll and costs a frame)
+    .to(content, { y: () => -vh() * 0.16, opacity: 0, ease: 'power2.in', duration: 0.24 }, 0)
+    .to(word, { y: () => -vh() * 1.15, scale: 1.12, ease: 'power2.in', duration: 0.6 }, 0.02)
+    .to(word, { opacity: 0, ease: 'power1.in', duration: 0.2 }, 0.42)
+    .to(object, { y: () => -vh() * 1.3, scale: 1.14, ease: 'power2.in', duration: 0.58 }, 0.08)
+    .to(bg, { scale: 1.06, opacity: 0, ease: 'power1.inOut', duration: 0.32 }, 0.24)
+    .fromTo(ground, { yPercent: 0 }, { yPercent: -100, ease: liftEase, duration: LIFT[1] - LIFT[0] }, LIFT[0])
+    // hold on the light frame so the scrub lag never shows a remnant of the hero when the pin lets go (and keep the
+    // timeline exactly 1 long, so its time is the scroll progress the nav reads above)
+    .to({}, { duration: 1 - LIFT[1] }, LIFT[1]);
 
   // ---- Entrance (after the intro, or immediately on return visits)
   function enter() {

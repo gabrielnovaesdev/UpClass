@@ -224,7 +224,7 @@ export async function evolutionStage({ videos }) {
     ambient.style.opacity = String(1 - lift);
     // (held every frame of the lift: the flow's own trigger fires as it slides under, while the top is still dark)
     if (t > 0.7 && t < 1) {
-      const theme = lift > 0.86 ? 'light' : 'dark';
+      const theme = lift > 0.75 ? 'light' : 'dark';
       if (nav.dataset.theme !== theme) nav.dataset.theme = theme;
       lastTheme = theme;
     } else if (lastTheme && t <= 0.7) {

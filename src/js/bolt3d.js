@@ -220,7 +220,9 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     }
     renderer.render(scene, camera);
   }
-  const start = () => { if (!running) { running = true; gsap.ticker.add(tick); } };
+  let held = false; // out of the frame (the hero's hand-over): no frames, even though its host is still on screen
+  let inView = false;
+  const start = () => { if (!running && !held) { running = true; gsap.ticker.add(tick); } };
   const stop = () => { if (running) { running = false; gsap.ticker.remove(tick); } };
 
   if (import.meta.env.DEV) window[`__bolt_${mode}`] = { face, rim, renderer, scene, camera, key, rimPink, rimBlue, state, spin };
@@ -228,11 +230,17 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
   resize();
   const ro = new ResizeObserver(resize);
   ro.observe(host);
-  const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), { threshold: 0 });
+  const io = new IntersectionObserver(([e]) => { inView = e.isIntersecting; if (inView) start(); else stop(); }, { threshold: 0 });
   io.observe(host); // render only while on screen
   start();
 
   return {
+    hold(on) {
+      if (on === held) return;
+      held = on;
+      if (held) stop();
+      else if (inView) start();
+    },
     appear() {
       gsap.to(canvas, { opacity: 1, duration: 0.6, ease: 'power1.out' });
       gsap.to(state, { appear: 1, duration: 2.4, ease: 'expo.out' });
