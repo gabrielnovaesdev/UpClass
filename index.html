@@ -147,15 +147,29 @@
         <!-- where the film starts (small, in brand duotone) and where it lands (the real player) -->
         <div class="evo__slot" aria-hidden="true"></div>
         <figure class="evo__player">
-          <video class="film__video" aria-label="Filme da Upclass" data-lazy data-autoplay muted loop playsinline preload="none" poster="/img/film/iphone-blue-1600.webp" aria-label="Filme da marca Upclass: raios, iPhones e a promessa Nada menos do que você espera.">
-            <source data-src="/video/film-1080.webm" type="video/webm" media="(min-width: 761px)" />
-            <source data-src="/video/film-1080.mp4" type="video/mp4" media="(min-width: 761px)" />
-            <source data-src="/video/film-720.mp4" type="video/mp4" />
+          <!-- a textless loop from the film (bolts and iPhones) plays behind PLAY ▶ REEL; the full film opens in the dialog -->
+          <video class="film__video" data-lazy data-autoplay muted loop playsinline preload="none" poster="/video/preview-poster.webp" aria-hidden="true">
+            <source data-src="/video/preview-1080.webm" type="video/webm" media="(min-width: 761px)" />
+            <source data-src="/video/preview-1080.mp4" type="video/mp4" media="(min-width: 761px)" />
+            <source data-src="/video/preview-720.mp4" type="video/mp4" />
           </video>
+          <button class="evo__play" type="button" aria-label="Pausar a prévia do filme"><span class="evo__play-icon" aria-hidden="true"></span></button>
+          <!-- PLAY ▶ REEL: opens the full film. On desktop it rides the travelling panel (evo-section.js). -->
+          <button class="evo__reel" type="button" aria-label="Assistir ao filme em tela cheia">
+            <span class="evo__reel-word evo__reel-word--a" aria-hidden="true"><span class="evo__reel-l" style="--d:3"><i>P</i></span><span class="evo__reel-l" style="--d:2"><i>L</i></span><span class="evo__reel-l" style="--d:1"><i>A</i></span><span class="evo__reel-l" style="--d:0"><i>Y</i></span></span>
+            <span class="evo__reel-btn" aria-hidden="true"><span class="evo__reel-fill"></span><svg viewBox="0 0 16 16"><path d="M5 3.2v9.6L13 8z" /></svg></span>
+            <span class="evo__reel-word evo__reel-word--b" aria-hidden="true"><span class="evo__reel-l" style="--d:0"><i>R</i></span><span class="evo__reel-l" style="--d:1"><i>E</i></span><span class="evo__reel-l" style="--d:2"><i>E</i></span><span class="evo__reel-l" style="--d:3"><i>L</i></span></span>
+          </button>
         </figure>
         <canvas class="evo__gl" aria-hidden="true"></canvas>
-        <div class="film__foot">
-          <button class="evo__play" type="button" aria-label="Pausar o filme"><span class="evo__play-icon" aria-hidden="true"></span></button>
+      </div>
+      <dialog class="evo__dialog" aria-label="Filme da Upclass">
+        <div class="evo__dialog-inner">
+          <video class="evo__film" controls muted playsinline preload="none" poster="/img/film/iphone-blue-1600.webp">
+            <source src="/video/film-1080.webm" type="video/webm" media="(min-width: 761px)" />
+            <source src="/video/film-1080.mp4" type="video/mp4" media="(min-width: 761px)" />
+            <source src="/video/film-720.mp4" type="video/mp4" />
+          </video>
           <ol class="film__chapters" aria-label="Capítulos do filme">
             <li><button type="button" data-t="0"><span class="caps">00</span>Iniciar<i aria-hidden="true"></i></button></li>
             <li><button type="button" data-t="4"><span class="caps">01</span>Evolução<i aria-hidden="true"></i></button></li>
@@ -167,7 +181,8 @@
             <li><button type="button" data-t="45"><span class="caps">07</span>Upclass<i aria-hidden="true"></i></button></li>
           </ol>
         </div>
-      </div>
+        <button class="evo__close" type="button" aria-label="Fechar o filme"></button>
+      </dialog>
     </section>
 
     <section class="name" id="nome" data-theme="light" aria-labelledby="name-title">

@@ -13,7 +13,7 @@ export function initSections({ reduce, lenis, finePointer }) {
   const videos = lazyVideos({ reduce });
 
   // interactive pieces that work with or without motion
-  filmControls();
+  filmControls({ lenis });
   // the film stage is WebGL on capable desktops; everywhere else it is a calm, fully functional player
   const evoGL = !reduce && finePointer && window.matchMedia('(min-width: 761px)').matches && canRunGL();
   if (evoGL) evolutionStage({ videos }).catch(() => document.querySelector('.evo').classList.remove('is-gl'));

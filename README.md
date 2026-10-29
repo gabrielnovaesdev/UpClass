@@ -33,7 +33,7 @@ Enquanto um campo estiver vazio, o site mostra "em breve" naquele ponto (rodapé
 - `src/css/main.css`: base, intro, menu e hero. `src/css/sections.css`: demais seções e rodapé.
 - `src/js/`: `intro.js`, `hero.js` e `bolt3d.js` (raio 3D), `sections.js` (animações de scroll), `evo-section.js` e `evolution.js` ("A evolução": o filme em WebGL), `symbol.js` ("O símbolo": anatomia do raio 3D), `video.js` (carregamento preguiçoso dos vídeos), `config.js` (contatos).
 - `qa/`: scripts do Processo testador (ver `CLAUDE.md`).
-- `public/video/`: vídeos da marca otimizados para a web (WebM/MP4, sem áudio, com poster).
+- `public/video/`: vídeos da marca otimizados para a web (WebM/MP4, sem áudio, com poster). `preview-*` é um trecho sem legendas do filme (20–26 s) que roda em loop atrás do PLAY ▶ REEL; o filme completo (`film-*`) abre no diálogo.
 - `public/img/`: texturas do raio, fundos, mockups (`mk/`, AVIF + WebP) e quadros do filme (`film/`).
 
 Quem prefere menos movimento (`prefers-reduced-motion`) recebe a página estática, sem pins nem vídeos em reprodução automática. Celulares e aparelhos mais fracos recebem versões sem pin (e sem WebGL quando o aparelho não aguenta) das seções 02 e 03, com os mesmos conteúdos e controles.
