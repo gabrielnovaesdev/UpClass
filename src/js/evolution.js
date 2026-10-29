@@ -24,8 +24,8 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 /*
  * 02 · A evolução — the film takes a body.
  * A WebGL panel plays the brand film as a texture. It starts small, in the brand's blue duotone, beside the
- * title; a glossy ribbon in the brand gradient wraps it (in front of and behind it — real depth, which is
- * why this is WebGL and not CSS). Scrolling pulls the panel to the player: it bows with the scroll speed,
+ * title; a glossy 3D ribbon in the brand gradient winds around and behind it (lit tube geometry is why this
+ * is WebGL and not CSS). Scrolling pulls the panel to the player: it bows with the scroll speed,
  * colour is revealed by a wipe along the bolt's diagonal, and on landing the native <video> takes over,
  * pixel-aligned, so the film stays sharp, correctly framed and fully controllable.
  */
@@ -116,14 +116,17 @@ export async function createEvolution({ host, canvas, video, poster }) {
   };
   const panel = new Mesh(
     new PlaneGeometry(1, 1, 64, 36),
-    new ShaderMaterial({ uniforms, vertexShader: vert, fragmentShader: frag, transparent: true, depthWrite: true }),
+    new ShaderMaterial({ uniforms, vertexShader: vert, fragmentShader: frag, transparent: true, depthTest: false, depthWrite: false }),
   );
+  panel.renderOrder = 1;
   scene.add(panel);
   const useVideo = () => { if (uniforms.uTex.value !== videoTex) uniforms.uTex.value = videoTex; };
   video.addEventListener('playing', useVideo);
   if (video.readyState >= 2 && !video.paused) useVideo();
 
   // ---- the ribbon
+  // It always passes behind the film (the panel draws over it with no depth test), so the two never cut into
+  // each other while the panel bends and travels through the ribbon's path.
   const ribbonMat = new MeshPhysicalMaterial({
     vertexColors: true, roughness: 0.42, metalness: 0, clearcoat: 0.35, clearcoatRoughness: 0.3, envMapIntensity: 0.55,
   });
