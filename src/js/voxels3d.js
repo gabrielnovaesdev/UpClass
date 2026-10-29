@@ -1,4 +1,17 @@
-import { BufferGeometry, CanvasTexture, Float32BufferAttribute, MeshMatcapMaterial, SRGBColorSpace } from 'three';
+import {
+  BackSide,
+  BufferGeometry,
+  CanvasTexture,
+  Float32BufferAttribute,
+  Mesh,
+  MeshBasicMaterial,
+  MeshPhysicalMaterial,
+  PlaneGeometry,
+  PMREMGenerator,
+  Scene,
+  SphereGeometry,
+  SRGBColorSpace,
+} from 'three';
 
 /*
  * The floating field's pieces, in the language of Noomo's background: pixel icons built out of solid blocks, crisp
@@ -217,33 +230,43 @@ export function voxelIcons() {
   return Object.values(ICONS).map(mesh);
 }
 
-/* The pieces' material: porcelain painted into a matcap, so every icon reads the same wherever it floats — faces turned
-   to you bright white, faces turning away a cool grey-blue, the steps picking up the brand's pink on one side and blue
-   on the other. Nothing in it is darker than that grey-blue, so no edge can ever turn into a dark outline. */
-export function porcelainMaterial() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const g = c.getContext('2d');
-  g.fillStyle = '#b9bedb';
-  g.fillRect(0, 0, 256, 256);
-  const body = g.createRadialGradient(108, 96, 6, 128, 128, 128);
-  body.addColorStop(0, '#ffffff');
-  body.addColorStop(0.45, '#f6f6fd');
-  body.addColorStop(0.72, '#e2e4f3');
-  body.addColorStop(0.9, '#c9cde6');
-  body.addColorStop(1, '#bcc1de');
-  g.fillStyle = body;
-  g.beginPath(); g.arc(128, 128, 128, 0, Math.PI * 2); g.fill();
-  const tint = (x, y, col) => {
-    const t = g.createRadialGradient(x, y, 0, x, y, 120);
-    t.addColorStop(0, col);
-    t.addColorStop(1, 'rgba(255, 255, 255, 0)');
-    g.fillStyle = t;
-    g.fillRect(0, 0, 256, 256);
+/* The room the pieces reflect: the page itself. A lavender sphere like the mist, with the sky's lights as soft panels
+   around it — the warm glow above, the brand's pink low on the left, its blue up on the right, a breath of cyan below —
+   so every face of a block mirrors the colours that are on the screen as it sways, the way glazed porcelain would. */
+export function skyEnvironment(renderer) {
+  const room = new Scene();
+  room.add(new Mesh(new SphereGeometry(10, 32, 16), new MeshBasicMaterial({ color: 0xbab6de, side: BackSide })));
+  const panel = (color, k, x, y, z, w, h) => {
+    const m = new Mesh(new PlaneGeometry(w, h), new MeshBasicMaterial({ color, side: BackSide }));
+    m.material.color.multiplyScalar(k);
+    m.position.set(x, y, z);
+    m.lookAt(0, 0, 0);
+    room.add(m);
   };
-  tint(40, 200, 'rgba(252, 57, 206, 0.22)'); // pink from the lower left
-  tint(220, 70, 'rgba(70, 120, 255, 0.2)'); // blue from the upper right
-  const matcap = new CanvasTexture(c);
-  matcap.colorSpace = SRGBColorSpace;
-  return new MeshMatcapMaterial({ matcap });
+  panel(0xfff3f8, 2, 0, 9, 0, 12, 6); // the warm glow overhead
+  panel(0xff4fd0, 1.6, -9, -1, 2, 7, 12); // pink on the left
+  panel(0x3f74ff, 1.6, 9, 1, 2, 7, 12); // blue on the right
+  panel(0x8ff2ff, 1.1, 0, -9, 2, 12, 5); // cyan from below
+  panel(0xffffff, 1.35, 0, 0, 9, 9, 7); // the screen in front: faces turned to you read bright
+  const pmrem = new PMREMGenerator(renderer);
+  const env = pmrem.fromScene(room, 0.03).texture;
+  pmrem.dispose();
+  return env;
+}
+
+/* Glazed porcelain for the floating pieces: a lavender body (never paper white, so it stands out from the mist), a
+   clear glaze that mirrors the room above, and a thin pearly film that turns pink to blue as the faces tilt. Three
+   tints, so the field is not uniform. */
+export function glazeMaterials(env, { lite = false } = {}) {
+  const tints = [
+    0xebe4f6, // pink-leaning
+    0xe3e6f8, // blue-leaning
+    0xe8e4f4, // violet, in between
+  ];
+  return tints.map((color) => new MeshPhysicalMaterial({
+    color, envMap: env, envMapIntensity: 0.62,
+    roughness: 0.24, metalness: 0,
+    clearcoat: 0.55, clearcoatRoughness: 0.14,
+    iridescence: lite ? 0 : 0.22, iridescenceIOR: 1.35, iridescenceThicknessRange: [160, 480],
+  }));
 }

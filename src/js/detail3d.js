@@ -14,7 +14,7 @@ import {
 } from 'three';
 import { makeIphone } from './iphone3d.js';
 import { makeBadge, makeBag, makeBubble, softenSilhouettes, studioEnvironment } from './heroes3d.js';
-import { porcelainMaterial, voxelIcons } from './voxels3d.js';
+import { glazeMaterials, skyEnvironment, voxelIcons } from './voxels3d.js';
 
 /*
  * Two 3D stages that share one look:
@@ -22,8 +22,9 @@ import { porcelainMaterial, voxelIcons } from './voxels3d.js';
  *   it and turning on its own: a real iPhone (iPhone), a verified badge (Procedência), the
  *   Upclass bag with the box inside (Entrega) and a message bubble (Atendimento);
  * - the field (flow.js drives it), a canvas in the sky shared by the name, the details, the collection and the
- *   moments: pixel icons of the store and its mark built from solid blocks (voxels3d.js), matte porcelain,
- *   scattered in depth as in Noomo's background. They drift and sway all
+ *   moments (and the manifesto's own sky): pixel icons of the store and its mark built from solid blocks
+ *   (voxels3d.js), in a lavender glaze that mirrors the colours of the page, scattered
+ *   through three layers of depth as in Noomo's background. They drift and sway all
  *   the time and slide with the scroll at a speed that depends on their distance, so the space reads as deep and
  *   carries on from one section to the next.
  * The light mist of the page is the fog, so the far pieces dissolve into it.
@@ -163,7 +164,7 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
     dispose: base.dispose,
     /**
      * c: the scroll cursor (index of the word at the centre, fractional); slot: pixels between two words; t: seconds;
-     * flights: per object, p 0 → 1 as it flies in (timed by detail.js while the page holds on its word).
+     * flights: per object, p 0 → 1 as it flies in (played by the scroll in detail.js, never back once landed).
      */
     frame(c, slot, t, flights) {
       const { visibleH, aspect, hostH } = view;
@@ -215,29 +216,39 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
   };
 }
 
-export function createField(canvas, host, svgText, { lite = false } = {}) {
+export function createField(canvas, host, svgText, { lite = false, count = lite ? 12 : 22 } = {}) {
   const base = baseStage(canvas, host, lite);
   const { renderer, scene, camera, view } = base;
+  // a deeper room than the details' stage: the far pieces sink well into the mist instead of stopping at a wall
+  scene.fog = new Fog(MIST, 13, 34);
 
   const geos = voxelIcons();
-  const glass = porcelainMaterial(); // matte porcelain, as in the reference (voxels3d.js)
-  // scattered in depth like Noomo's icons; the nearest are the largest, the far ones dissolve into the mist
+  const env = skyEnvironment(renderer);
+  const glazes = glazeMaterials(env, { lite });
+  softenSilhouettes({ traverse: (fn) => glazes.forEach((material) => fn({ isMesh: true, material })) });
+  // three layers of depth: a few large pieces close to the glass, a middle band, and a far field small and misted.
+  // They lean towards the middle of the screen; only the nearest keep to the sides, where they cannot cover the words
+  const LAYERS = [
+    { z: [0.6, 3], x: [0.5, 0.9], s: [0.5, 0.75] }, // near
+    { z: [-3.2, 0.2], x: [0.12, 0.72], s: [0.6, 0.9] }, // middle
+    { z: [-10, -4.5], x: [0, 0.62], s: [0.85, 1.2] }, // far
+  ];
+  const lerp = ([a, b], t) => a + (b - a) * t;
   const pieces = [];
-  const count = lite ? 10 : 18;
   for (let i = 0; i < count; i++) {
-    const m = new Mesh(geos[i % geos.length], glass);
-    // never in the band where the protagonists of the details come to rest (about two thirds out to each side):
-    // most pieces live at the edges of the screen, a few far back behind the words, small and misted
-    const deep = i % 3 === 0;
-    const z = deep ? -4.5 + rand() * 2 : -2 + rand() * 4.5;
+    const layer = LAYERS[i % 3];
+    const glaze = glazes[i % glazes.length];
+    const m = new Mesh(geos[i % geos.length], glaze);
+    const z = lerp(layer.z, rand());
+    const s = lerp(layer.s, rand());
     m.userData = {
-      x: (i % 2 ? 1 : -1) * (deep ? 0.1 + rand() * 0.28 : 0.95 + rand() * 0.16), y: rand(), z,
-      s: 0.55 + rand() * 0.45,
+      x: (i % 2 ? 1 : -1) * lerp(layer.x, rand()), y: rand(), z, s,
       rx: rand() * 6, ry: rand() * 6,
-      vx: (rand() - 0.5) * 0.5, vy: 0.2 + rand() * 0.5,
-      depth: 0.6 + ((z + 3) / 6) * 0.8, // nearer pieces slide faster with the scroll
+      vy: 0.2 + rand() * 0.5,
+      // true parallax: the nearer, the faster it slides with the scroll (and the far field barely moves)
+      depth: Math.pow(camera.position.z / (camera.position.z - z), 1.6),
     };
-    m.scale.setScalar(m.userData.s);
+    m.scale.setScalar(s);
     scene.add(m);
     pieces.push(m);
   }
@@ -246,7 +257,7 @@ export function createField(canvas, host, svgText, { lite = false } = {}) {
     resize: base.resize,
     pointer: base.pointer,
     dispose: base.dispose,
-    /** t: seconds; scrolled: pixels scrolled through the whole flow (for the parallax). */
+    /** t: seconds; scrolled: pixels scrolled through the host (for the parallax). */
     frame(t, scrolled) {
       const { visibleH, aspect, hostH } = view;
       const pxToWorld = visibleH / hostH;
@@ -258,7 +269,8 @@ export function createField(canvas, host, svgText, { lite = false } = {}) {
         const y = u.y * spanY + scrolled * pxToWorld * u.depth * 0.55 + t * 0.06 * u.vy;
         const wrapped = (((y % spanY) + spanY) % spanY) - spanY / 2;
         m.position.set(u.x * zH * aspect * 0.5 + Math.sin(t * 0.2 + u.rx) * 0.2, wrapped * (zH / visibleH), u.z);
-        // a slow sway rather than a spin: each piece keeps showing its face, so it reads as what it is
+        // a slow sway rather than a spin: each piece keeps showing its face, so it reads as what it is, while its
+        // glaze sweeps through the colours of the room
         m.rotation.set(Math.sin(t * 0.22 * (0.6 + u.vy) + u.rx) * 0.45, Math.sin(t * 0.18 * (0.6 + u.vy) + u.ry) * 0.9, Math.sin(t * 0.26 + u.ry) * 0.3);
       });
       renderer.render(scene, camera);

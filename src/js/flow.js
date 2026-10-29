@@ -62,3 +62,43 @@ export function initFlow({ reduce, finePointer }) {
   const stop = () => { if (running) { running = false; gsap.ticker.remove(frame); } };
   new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop())).observe(flow);
 }
+
+/*
+ * The manifesto, right under the hero, opens the same sky: the glows drift with the scroll and a lighter flock of
+ * the same pieces floats behind the sentence, so the light space of the page begins here and the details further
+ * down feel like a return to it.
+ */
+export function initManifestoSky({ reduce, finePointer }) {
+  const section = document.querySelector('.manifesto');
+  if (reduce) return;
+  const sky = section.querySelector('.manifesto__sky');
+  const canvas = section.querySelector('.manifesto__gl');
+
+  gsap.timeline({ scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1.5 }, defaults: { ease: 'sine.inOut', duration: 1 } })
+    .to(sky.querySelector('.flow__glow--warm'), { keyframes: { xPercent: [0, -18, 6], yPercent: [0, 8, -4] } }, 0)
+    .to(sky.querySelector('.flow__glow--pink'), { keyframes: { xPercent: [0, 20, 34], yPercent: [0, -12, -18] } }, 0)
+    .to(sky.querySelector('.flow__glow--cool'), { keyframes: { xPercent: [0, -12, -22], yPercent: [0, -8, 4] } }, 0);
+
+  if (!canRunGL()) return;
+  section.classList.add('is-gl');
+  let top = 0;
+  const measure = () => { top = section.getBoundingClientRect().top + window.scrollY; };
+  measure();
+  ScrollTrigger.addEventListener('refresh', measure);
+
+  let field = null;
+  import('./detail3d.js')
+    .then(({ createField }) => { field = createField(canvas, sky, svgText, { lite: !finePointer, count: finePointer ? 15 : 9 }); })
+    .catch(() => section.classList.remove('is-gl'));
+  if (finePointer) {
+    section.addEventListener('pointermove', (e) => field?.pointer(e.clientX / window.innerWidth - 0.5, e.clientY / window.innerHeight - 0.5));
+    section.addEventListener('pointerleave', () => field?.pointer(0, 0));
+  }
+  new ResizeObserver(() => field?.resize()).observe(sky);
+
+  const frame = (time) => field?.frame(time, window.scrollY - top);
+  let running = false;
+  const start = () => { if (!running) { running = true; gsap.ticker.add(frame); } };
+  const stop = () => { if (running) { running = false; gsap.ticker.remove(frame); } };
+  new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop())).observe(section);
+}

@@ -5,7 +5,7 @@
 
 /* accent word: brand light running through the letters (Ibrand has no italic) */
 .manifesto em, .promise em, .belong em, .closing em,
-.manifesto em .word, .belong em .word {
+.belong em .word {
   font-style: normal;
   color: transparent;
   background: linear-gradient(100deg, var(--blue), #8b3cf7 50%, var(--pink));
@@ -27,19 +27,48 @@
 .motion .manifesto { margin-top: -100svh; }
 .manifesto__pin { position: relative; min-height: 100svh; }
 .manifesto__inner {
-  position: relative; min-height: 100svh; overflow: hidden;
+  position: relative; min-height: 100svh; overflow: hidden; isolation: isolate;
   display: grid; grid-template-rows: 1fr auto; gap: 4vh;
   padding: calc(var(--nav-h) + 5vh) var(--gutter) 6vh;
+  background-color: var(--mist);
 }
+/* the sky of the details, brought up here: the same glows and the same floating pieces, so the light space starts
+   right under the hero */
+.manifesto__sky { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.manifesto__sky::after {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .6 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.manifesto__gl { display: none; position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; }
+.manifesto.is-gl .manifesto__gl { display: block; }
+
+/* The sentence as an inscription: centred, in the brand's own letters. The first line is said quietly, the answer
+   follows large; the mark itself flies down from the hero and lands at the end of it, where the seat waits (hero.js) */
 .manifesto__title {
-  align-self: center;
-  font-family: var(--display);
-  font-size: clamp(42px, 7vw, 136px); line-height: 0.96; letter-spacing: -0.035em;
-  max-width: 11.5em;
+  align-self: center; display: grid; justify-items: center; text-align: center;
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(44px, 6.9vw, 132px); line-height: 0.98; letter-spacing: -0.04em;
+  will-change: transform;
 }
-.manifesto__title { will-change: transform; }
-.manifesto__title .word { display: inline-block; will-change: filter, opacity; }
-.manifesto__bottom { display: grid; grid-template-columns: 1fr 1.25fr; gap: var(--gutter); align-items: end; }
+/* each line is a window its words rise into (room kept for the descenders of "p") */
+.manifesto__line { display: block; overflow: hidden; padding: 0 0.08em 0.14em; margin-bottom: -0.14em; }
+.manifesto__text { display: inline-block; white-space: nowrap; will-change: transform; }
+.manifesto__line--lead {
+  margin-bottom: 0.32em;
+  font-size: 0.4em; letter-spacing: -0.02em; color: var(--mist-ink);
+}
+/* the lead's quiet rule: a short hairline either side, like the line on a seal */
+.manifesto__line--lead .manifesto__text { display: inline-flex; align-items: center; gap: 0.9em; }
+.manifesto__line--lead .manifesto__text::before,
+.manifesto__line--lead .manifesto__text::after { content: ""; width: 2.2em; height: 1px; background: var(--hair); }
+/* the seat: as tall as the capitals, a breath after the full stop. Without the flight it holds the flat mark */
+.manifesto__seat {
+  position: relative; display: inline-block; vertical-align: -0.06em;
+  width: 0.56em; height: 0.96em; margin-left: 0.16em;
+}
+.manifesto__seat img { width: 100%; height: 100%; object-fit: contain; }
+.flight .manifesto__seat img { visibility: hidden; }
+.manifesto__bottom { display: grid; grid-template-columns: 1fr 1.25fr; gap: var(--gutter); align-items: end; padding-top: 3.2vh; border-top: 1px solid var(--hair); }
 .manifesto__note { max-width: 30em; font-size: clamp(15px, 1.1vw, 19px); line-height: 1.55; color: var(--mist-ink); }
 .manifesto__pillars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
 .manifesto__pillars li { display: grid; gap: 10px; }
@@ -271,10 +300,6 @@
 .detail.is-live .detail__word { color: color-mix(in srgb, var(--ink) calc(var(--k, 0) * 100%), #9aa0c2); }
 .detail.is-live .detail__text { position: absolute; left: 50%; top: calc(100% + 16vh); width: min(25em, 84vw); transform: translateX(-50%); opacity: var(--t, 0); }
 .detail.is-live .detail__fallback { display: none; }
-/* while an object flies in, the page holds on its word (detail.js). The scrollbar stays: the hold blocks the input
-   and pulls the page back instead, so the stopped Lenis must not hide the overflow as it does for the menu */
-html.is-holding { overscroll-behavior: none; touch-action: none; }
-html.lenis.lenis-stopped.is-holding { overflow: visible; }
 
 /* ---------------------------------------------------------------- 05 Coleção: frosted cards drift across the title
    Static flow by default: a row of cards that scrolls sideways. With .is-live (sections.js) the section pins and the
@@ -579,6 +604,10 @@ html.lenis.lenis-stopped.is-holding { overflow: visible; }
 @media (max-width: 760px) {
   .menu__list a { font-size: clamp(32px, 9vw, 56px); }
   .manifesto__top { flex-direction: column; gap: 6px; }
+  .manifesto__title { font-size: clamp(28px, 10vw, 56px); }
+  .manifesto__line--lead { font-size: 0.42em; }
+  .manifesto__line--lead .manifesto__text::before,
+  .manifesto__line--lead .manifesto__text::after { width: 1.2em; }
   .manifesto__bottom { grid-template-columns: 1fr; gap: 28px; }
   .manifesto__pillars { grid-template-columns: 1fr; gap: 14px; }
   .manifesto__pillars li { grid-template-columns: 2.4em 1fr; align-items: baseline; }
@@ -647,7 +676,7 @@ html.lenis.lenis-stopped.is-holding { overflow: visible; }
   .evo__dialog[open], .evo__dialog[open] .evo__dialog-inner { animation: none; }
   .evo__reel-l i { animation: none !important; }
   .evo:not(.is-gl) .evo__reel-l, .evo:not(.is-gl) .evo__reel-btn { transform: none; opacity: 1; transition: none; }
-  .hero__scroll i, .hero__shadow { animation: none; }
+  .hero__scroll i, .hero__pool { animation: none; }
   .menu { transition: none; }
   .upgrade__window { -webkit-mask: none; mask: none; }
   .moments__list .moment:is(:hover, :focus-visible) :is(.moment__title, .moment__text) { transform: none; }
