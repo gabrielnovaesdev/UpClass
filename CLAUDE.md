@@ -39,6 +39,7 @@ node qa/shoot.mjs mobile .evo ./qa-out/evo-m 8 1.6
 node qa/shoot.mjs desktop-reduce .sym ./qa-out/sym-r 3 1
 node qa/interact.mjs                                  # toque, teclado, player no celular e ordem das seções
 node qa/sections.mjs desktop                         # uma captura por seção + console (também: mobile)
+node qa/reel.mjs                                      # PLAY ▶ REEL: hover, abrir/fechar o filme (clique, Esc, teclado), celular
 ```
 
 ## Git

@@ -19,17 +19,59 @@ export function canRunGL() {
   }
 }
 
-/* ---- controls: play/pause and chapters with their progress (all layouts) */
-export function filmControls() {
-  const video = document.querySelector('.film__video');
-  const buttons = [...document.querySelectorAll('.film__chapters button')];
-  const play = document.querySelector('.evo__play');
+/* ---- controls (all layouts): the preview loop's pause button, PLAY ▶ REEL and the film dialog with its chapters */
+export function filmControls({ lenis }) {
+  const section = document.querySelector('.evo');
+  const preview = section.querySelector('.film__video');
+  const play = section.querySelector('.evo__play');
+  const reel = section.querySelector('.evo__reel');
+  const dialog = section.querySelector('.evo__dialog');
+  const film = dialog.querySelector('.evo__film');
+  const buttons = [...dialog.querySelectorAll('.film__chapters button')];
   const marks = buttons.map((b) => +b.dataset.t);
   let userPaused = false;
 
-  video.addEventListener('timeupdate', () => {
-    const t = video.currentTime;
-    const end = video.duration || 57.28;
+  // the preview loop: an explicit pause wins over the visibility observer that restarts it
+  play.addEventListener('click', () => {
+    userPaused = !preview.paused;
+    if (userPaused) preview.pause();
+    else preview.play().catch(() => {});
+  });
+  const sync = () => {
+    play.classList.toggle('is-paused', preview.paused);
+    play.setAttribute('aria-label', preview.paused ? 'Reproduzir a prévia do filme' : 'Pausar a prévia do filme');
+  };
+  preview.addEventListener('play', sync);
+  preview.addEventListener('pause', sync);
+  preview.addEventListener('play', () => (userPaused || dialog.open) && preview.pause());
+  sync();
+
+  // the full film, in a dialog over the page (Esc and the close button leave; focus returns to PLAY)
+  const seek = (t) => {
+    const go = () => { film.currentTime = t; film.play().catch(() => {}); };
+    if (film.readyState >= 1) go();
+    else film.addEventListener('loadedmetadata', go, { once: true });
+  };
+  const open = (t = 0) => {
+    if (!dialog.open) dialog.showModal();
+    lenis?.stop();
+    preview.pause();
+    if (film.preload === 'none') { film.preload = 'auto'; film.load(); }
+    seek(t);
+  };
+  reel.addEventListener('click', () => open(0));
+  dialog.querySelector('.evo__close').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); }); // backdrop
+  dialog.addEventListener('close', () => {
+    film.pause();
+    lenis?.start();
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches; // the preview never autoplays there
+    if (!userPaused && !calm) preview.play().catch(() => {});
+  });
+  buttons.forEach((b) => b.addEventListener('click', () => seek(+b.dataset.t)));
+  film.addEventListener('timeupdate', () => {
+    const t = film.currentTime;
+    const end = film.duration || 57.28;
     buttons.forEach((b, i) => {
       const a = marks[i];
       const z = marks[i + 1] ?? end;
@@ -40,30 +82,15 @@ export function filmControls() {
       b.style.setProperty('--p', clamp01((t - a) / (z - a)).toFixed(3));
     });
   });
-  buttons.forEach((b) =>
-    b.addEventListener('click', () => {
-      video.currentTime = +b.dataset.t;
-      if (!userPaused) video.play().catch(() => {});
-    }),
-  );
-  play.addEventListener('click', () => {
-    userPaused = !video.paused;
-    if (userPaused) video.pause();
-    else video.play().catch(() => {});
-  });
-  const sync = () => {
-    const paused = video.paused;
-    play.classList.toggle('is-paused', paused);
-    play.setAttribute('aria-label', paused ? 'Reproduzir o filme' : 'Pausar o filme');
-  };
-  video.addEventListener('play', sync);
-  video.addEventListener('pause', sync);
-  sync();
-  // the visibility observer would restart it; respect an explicit pause
-  video.addEventListener('play', () => userPaused && video.pause());
+
+  // outside the desktop stage, the letters gather once the film comes into view (see sections.css)
+  new IntersectionObserver(([e], io) => {
+    if (e.isIntersecting) { section.classList.add('is-in'); io.disconnect(); }
+  }, { threshold: 0.4 }).observe(preview.parentElement);
 }
 
-/* ---- desktop stage: the film panel travels from the slot to the player (see evolution.js) */
+/* ---- desktop stage: the film panel travels from the slot to the player (see evolution.js), then the pin
+   releases and the page scrolls on with the film and its ribbon */
 export async function evolutionStage({ videos }) {
   const section = document.querySelector('.evo');
   const pin = section.querySelector('.evo__pin');
@@ -71,9 +98,14 @@ export async function evolutionStage({ videos }) {
   const player = section.querySelector('.evo__player');
   const video = section.querySelector('.film__video');
   const intro = section.querySelector('.evo__intro');
-  const foot = section.querySelector('.film__foot');
+  const reel = section.querySelector('.evo__reel');
+  const reelBtn = reel.querySelector('.evo__reel-btn');
+  const letters = [...reel.querySelectorAll('.evo__reel-l')].map((el) => ({
+    el, d: +el.style.getPropertyValue('--d'), side: el.closest('.evo__reel-word--a') ? -1 : 1,
+  }));
 
   section.classList.add('is-gl');
+  pin.append(reel); // on the stage the label rides the travelling panel, not the hidden player
   const poster = new Image();
   poster.src = video.getAttribute('poster');
   await poster.decode().catch(() => {});
@@ -91,8 +123,11 @@ export async function evolutionStage({ videos }) {
     const rel = (el) => { const r = el.getBoundingClientRect(); return { x: r.left - p.left, y: r.top - p.top, w: r.width, h: r.height }; };
     from = rel(slot);
     to = rel(player); // includes its centring transform: exactly where the native video will show
+    reel.style.setProperty('--reel-fs', `${(to.w * 0.074).toFixed(1)}px`);
+    reelSize = [reel.offsetWidth, reel.offsetHeight];
   };
 
+  let reelSize = [0, 0];
   let t = 0;
   let speed = 0;
   const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
@@ -107,7 +142,7 @@ export async function evolutionStage({ videos }) {
     pointer.sx += (pointer.x - pointer.sx) * 0.08;
     pointer.sy += (pointer.y - pointer.sy) * 0.08;
     speed *= 0.9;
-    const k = inOut(range(t, 0.16, 0.66)); // travel
+    const k = inOut(range(t, 0.12, 0.62)); // travel
     const settle = 1 - k;
     s.rect = { x: lerp(from.x, to.x, k), y: lerp(from.y, to.y, k), w: lerp(from.w, to.w, k), h: lerp(from.h, to.h, k) };
     // resting, it leans towards the title and follows the cursor; travelling, it straightens out
@@ -115,28 +150,40 @@ export async function evolutionStage({ videos }) {
     s.tiltX = (0.14 + pointer.sy * 0.3) * settle;
     s.curl = Math.sin(k * Math.PI) * 0.32;
     s.bend = Math.sin(k * Math.PI) * 0.1 + gsap.utils.clamp(-0.3, 0.3, speed / 4000);
-    s.wipe = out(range(t, 0.34, 0.7));
-    s.ribbonB = out(range(t, 0.0, 0.42));
-    s.ribbonA = inOut(range(t, 0.5, 0.86));
-    s.alpha = 1 - range(t, 0.84, 0.9);
+    s.wipe = out(range(t, 0.3, 0.64));
+    // the ribbon draws itself in and stays: after the landing the page simply scrolls on, film and ribbon together
+    s.ribbonB = out(range(t, 0.0, 0.4));
+    s.ribbonA = 0;
+    s.alpha = 1 - range(t, 0.7, 0.74);
 
-    const fadeIntro = range(t, 0.1, 0.32);
+    const fadeIntro = range(t, 0.08, 0.3);
     intro.style.opacity = String(1 - fadeIntro);
     intro.style.transform = `translate3d(0, ${-fadeIntro * 8}vh, 0)`;
-    const handoff = range(t, 0.82, 0.88);
+    const handoff = range(t, 0.64, 0.7);
     player.style.opacity = String(handoff);
     player.style.visibility = handoff > 0 ? 'visible' : 'hidden';
-    const ui = range(t, 0.86, 0.94);
-    foot.style.opacity = String(ui);
-    foot.style.visibility = ui > 0 ? 'visible' : 'hidden';
-    foot.style.transform = `translate3d(0, ${(1 - ui) * 14}px, 0)`;
+
+    // PLAY ▶ REEL rides the panel; its letters arrive from far apart and settle one by one, then the button
+    const r = s.rect;
+    const sc = r.w / to.w;
+    reel.style.opacity = String(range(t, 0.18, 0.3));
+    reel.style.transform = `translate3d(${(r.x + r.w / 2 - reelSize[0] / 2).toFixed(1)}px, ${(r.y + r.h / 2 - reelSize[1] / 2).toFixed(1)}px, 0) scale(${sc.toFixed(4)})`;
+    letters.forEach(({ el, d, side }) => {
+      const g = out(range(t, 0.28 + d * 0.05, 0.56 + d * 0.05));
+      el.style.transform = `translate3d(${(side * (1 - g) * (1.1 + d * 0.6)).toFixed(3)}em, ${((1 - g) * (d % 2 ? 0.2 : -0.2)).toFixed(3)}em, 0)`;
+      el.style.opacity = String(0.2 + 0.8 * g);
+    });
+    const b = out(range(t, 0.52, 0.68));
+    reelBtn.style.setProperty('--in', b.toFixed(3));
+    reel.style.pointerEvents = b > 0.9 ? 'auto' : 'none';
+    reel.tabIndex = b > 0.9 ? 0 : -1;
   }
 
   gsap.timeline({
     scrollTrigger: {
       trigger: pin,
       start: 'top top',
-      end: '+=240%',
+      end: '+=200%',
       pin: true,
       scrub: 0.7,
       invalidateOnRefresh: true,
@@ -164,7 +211,7 @@ export async function evolutionStage({ videos }) {
 /* ---- phones, reduced motion, no WebGL: a calm reveal */
 export function evolutionFlat({ reduce }) {
   if (reduce) return;
-  gsap.from(['.evo__intro > *', '.evo__player', '.film__foot'], {
+  gsap.from(['.evo__intro > *', '.evo__player'], {
     y: 36, autoAlpha: 0, duration: 1.2, ease: 'expo.out', stagger: 0.08,
     scrollTrigger: { trigger: '.evo', start: 'top 70%', once: true },
   });
