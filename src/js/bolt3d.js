@@ -64,45 +64,13 @@ function shapesOf(svgText) {
 }
 
 /**
- * mode 'hero'  — floats behind the hero copy, spins with scroll, tilts towards the pointer.
- * mode 'intro' — centred and fully art-directed from outside through `rig` (see intro.js).
- * mode 'symbol' — centred, art-directed by the symbol section (see symbol.js); `rig.project` maps logo
- *                 coordinates to screen pixels so the HTML/SVG annotations stay locked to the 3D mark.
+ * The brand mark as one poured object: two extruded bolts carrying the artwork (see the notes on BODY,
+ * ART_URL and the face material). Shared by the hero and intro stage and by the "Detalhes" section (detail3d.js).
+ * Returns `model` (svg → world, y flipped; scale it by world units per svg unit) and the two `bolts`.
  */
-export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
+export async function buildMark(renderer, svgText) {
   const [img, reliefImg] = await Promise.all([loadImage(ART_URL), loadImage(RELIEF_URL)]);
-
-  const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-  renderer.toneMapping = NeutralToneMapping;
-  renderer.outputColorSpace = SRGBColorSpace;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = PCFSoftShadowMap;
-
-  const scene = new Scene();
-  const pmrem = new PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
-
-  const camera = new PerspectiveCamera(22, 1, 0.1, 100);
-  camera.position.set(0, 0, 10);
-
-  // Key light from the upper left, like the highlight baked into the artwork; it casts the fold shadows.
-  const ambient = new AmbientLight(0xffffff, 0.04);
-  const key = new DirectionalLight(0xffffff, 0.5);
-  key.position.set(-4, 4.5, 3.2); // grazing, so every step throws a visible shadow
-  key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
-  key.shadow.radius = 4;
-  key.shadow.bias = -0.0004;
-  key.shadow.normalBias = 0.02;
-  Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 1.6, bottom: -1.6, near: 1, far: 20 });
-  const rimPink = new DirectionalLight(0xff4fd8, 2.2);
-  rimPink.position.set(-6, -3, -2);
-  const rimBlue = new DirectionalLight(0x2f6bff, 2.2);
-  rimBlue.position.set(6, 4, -3);
-  scene.add(ambient, key, rimPink, rimBlue);
-
+  const model = new Group();
   const art = new Texture(img);
   art.colorSpace = SRGBColorSpace;
   art.flipY = false; // shape y grows downward, like the image rows
@@ -147,11 +115,6 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     toneMapped: false,
   });
   face.normalScale.set(0.7, 0.7);
-  const spin = new Group(); // overall pose: scroll, pointer, idle float
-  const model = new Group(); // svg → world (y flipped)
-  spin.add(model);
-  scene.add(spin);
-
   const silhouettes = shapesOf(svgText);
   const bolts = silhouettes.map((shapes) => {
     const bolt = new Group();
@@ -171,10 +134,52 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     model.add(bolt);
     return bolt;
   });
-  model.position.set(0, 0, 0);
   const centre = { x: VB_W / 2, y: VB_H / 2 };
   bolts.forEach((b) => b.position.set(b.userData.home.x - centre.x, b.userData.home.y - centre.y, b.userData.home.z));
   bolts.forEach((b) => (b.userData.home = b.position.clone()));
+  return { model, bolts, face, rim };
+}
+
+/**
+ * mode 'hero'  — floats behind the hero copy, spins with scroll, tilts towards the pointer.
+ * mode 'intro' — centred and fully art-directed from outside through `rig` (see intro.js).
+ */
+export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
+  const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+  renderer.toneMapping = NeutralToneMapping;
+  renderer.outputColorSpace = SRGBColorSpace;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = PCFSoftShadowMap;
+
+  const scene = new Scene();
+  const pmrem = new PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+
+  const camera = new PerspectiveCamera(22, 1, 0.1, 100);
+  camera.position.set(0, 0, 10);
+
+  // Key light from the upper left, like the highlight baked into the artwork; it casts the fold shadows.
+  const ambient = new AmbientLight(0xffffff, 0.04);
+  const key = new DirectionalLight(0xffffff, 0.5);
+  key.position.set(-4, 4.5, 3.2); // grazing, so every step throws a visible shadow
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.radius = 4;
+  key.shadow.bias = -0.0004;
+  key.shadow.normalBias = 0.02;
+  Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 1.6, bottom: -1.6, near: 1, far: 20 });
+  const rimPink = new DirectionalLight(0xff4fd8, 2.2);
+  rimPink.position.set(-6, -3, -2);
+  const rimBlue = new DirectionalLight(0x2f6bff, 2.2);
+  rimBlue.position.set(6, 4, -3);
+  scene.add(ambient, key, rimPink, rimBlue);
+
+  const { model, bolts, face, rim } = await buildMark(renderer, svgText);
+  const spin = new Group(); // overall pose: scroll, pointer, idle float
+  spin.add(model);
+  scene.add(spin);
 
   const state = { appear: 0, scroll: 0, px: 0, py: 0, tx: 0, ty: 0 };
   let visibleH = 1;
@@ -190,7 +195,7 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     camera.updateProjectionMatrix();
     visibleH = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360);
     const narrow = w < 760;
-    const frac = mode === 'intro' ? introFrac(w, h) : mode === 'symbol' ? symbolFrac(w, h) : narrow ? 0.3 : 0.4;
+    const frac = mode === 'intro' ? introFrac(w, h) : narrow ? 0.3 : 0.4;
     baseY = mode === 'hero' ? visibleH * (narrow ? 0.07 : -0.035) : 0; // portrait screens lift the hero bolt clear of the copy
     unit = (visibleH * frac) / VB_H;
     model.scale.set(unit, -unit, unit); // svg y-axis points down
@@ -239,7 +244,7 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
       state.tx = x;
       state.ty = y;
     },
-    // direct handles for the intro and symbol choreography
+    // direct handles for the intro choreography
     rig: {
       spin, bolts, key, rimPink, rimBlue, camera,
       get unit() { return unit; },
@@ -262,11 +267,6 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
       renderer.forceContextLoss();
     },
   };
-}
-
-// The symbol section gives the mark most of the screen height beside the copy; on phones it fills its own stage.
-export function symbolFrac(w, h) {
-  return w < 760 ? 0.82 : 0.56;
 }
 
 // On screen the intro mark is exactly as tall as the SVG opening it hands over to.

@@ -34,13 +34,21 @@ Cobertura mínima de cada rodada:
 Ferramentas (precisam do Chrome instalado e de `npm i --no-save puppeteer-core`; o servidor de dev deve estar rodando):
 
 ```bash
-node qa/shoot.mjs desktop .sym ./qa-out/sym 12 4.2   # capturas passo a passo de uma seção + FPS + console
-node qa/shoot.mjs mobile .evo ./qa-out/evo-m 8 1.6
-node qa/shoot.mjs desktop-reduce .sym ./qa-out/sym-r 3 1
-node qa/interact.mjs                                  # toque, teclado, player no celular e ordem das seções
+node qa/shoot.mjs desktop .detail ./qa-out/detail 12 3.2   # capturas passo a passo de uma seção + FPS + console
+node qa/shoot.mjs mobile .collection ./qa-out/coll-m 10 4.6
+node qa/shoot.mjs desktop-reduce .detail ./qa-out/detail-r 3 1
+node qa/wheel.mjs .hero 2.6 ./qa-out/wheel-hero           # rolagem com a roda do mouse (via Lenis) + ritmo de quadros
+node qa/interact.mjs                                  # celular 320 px (Detalhes e cards), WebGL só na tela, teclado, ordem das seções, aparelho fraco
 node qa/sections.mjs desktop                         # uma captura por seção + console (também: mobile)
 node qa/reel.mjs                                      # PLAY ▶ REEL: hover, abrir/fechar o filme (clique, Esc, teclado), celular
+node qa/footer.mjs                                    # rodapé: layout, ícone que se transforma, foco por teclado, voltar ao topo
 ```
+
+## Padrões visuais (referência Noomo, 29/10/2026)
+
+- Seções claras usam `.atmo` (névoa lavanda) e títulos grandes em caixa alta com `--caps-display` (Gotham; Montserrat completa K, Y, Z e Ç). O Ibrand continua nos títulos das demais seções.
+- Fotos de produto dos cards ficam em `public/img/cards/` (800/1600 px, AVIF + WebP, `<picture>`, `width/height` 800×597). Os originais ficam só em `Upclass Phone/identidade visual/`.
+- Capturas para QA: tirar a tela inteira e recortar depois (screenshot com `clip` redimensiona a página e dispara refresh do ScrollTrigger).
 
 ## Git
 

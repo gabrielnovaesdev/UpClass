@@ -19,7 +19,6 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
   const canvas3d = hero.querySelector('.hero__3d');
   const words = hero.querySelectorAll('[data-words]');
   const scrollCue = hero.querySelector('.hero__scroll');
-  const wipe = hero.querySelector('.wipe');
   const navEl = document.querySelector('.nav');
 
   if (reduce) {
@@ -77,50 +76,40 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     });
   }
 
-  // ---- Pixel wipe cells, ordered bottom-up with a little scatter so the edge reads as a staircase
-  function buildWipe(cols, rows) {
-    wipe.style.setProperty('--cols', cols);
-    wipe.style.setProperty('--rows', rows);
-    wipe.innerHTML = '';
-    const cells = [];
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const i = document.createElement('i');
-        i.style.transformOrigin = (r + c) % 2 ? 'left' : 'right';
-        wipe.appendChild(i);
-        const scatter = ((c * 7 + r * 3) % 5) / 5; // deterministic, no Math.random flicker on refresh
-        cells.push({ el: i, order: (rows - 1 - r) * 0.9 + scatter * 1.4 + (c % 2) * 0.3 });
-      }
-    }
-    return cells.sort((a, b) => a.order - b.order).map((c) => c.el);
-  }
-
-  // ---- Scroll: hero pins, the bolt makes a full turn, the wordmark opens up, then the next section tiles in
-  const mm = gsap.matchMedia();
-  mm.add({ wide: '(min-width: 901px)', narrow: '(max-width: 900px)' }, (ctx) => {
-    const cells = ctx.conditions.wide ? buildWipe(5, 3) : buildWipe(3, 4);
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: hero,
-        start: 'top top',
-        end: () => `+=${window.innerHeight * 1.5}`,
-        pin: true,
-        scrub: 0.5,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          bolt?.scroll(self.progress);
-          nav.setTheme(self.progress > 0.74 ? 'light' : 'dark');
-        },
+  // ---- Scroll: the hero pins and the bolt makes a full turn; then the camera seems to rise — the wordmark comes closer
+  //      and sinks out of the frame, the bolt follows it, the dark ground lifts away — and the manifesto, already
+  //      waiting underneath on the light mist, drifts down into place (its half lives in sections.js, manifesto()).
+  const object = hero.querySelector('.hero__object');
+  const content = hero.querySelector('.hero__content');
+  const vh = () => window.innerHeight;
+  gsap.set(word, { '--stroke': 'rgba(241, 239, 250, 0.24)' });
+  gsap.timeline({
+    scrollTrigger: {
+      trigger: hero,
+      start: 'top top',
+      end: () => `+=${vh() * 1.5}`,
+      pin: true,
+      scrub: 0.6,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        bolt?.scroll(self.progress);
+        nav.setTheme(self.progress > 0.6 ? 'light' : 'dark');
       },
-    });
-    tl.to(bg, { scale: 1.08, yPercent: -3, ease: 'none', duration: 1 }, 0)
-      .to(word, { scale: 1.14, autoAlpha: 0.35, ease: 'none', duration: 0.8 }, 0)
-      .to('.hero__content', { yPercent: -4, autoAlpha: 0.4, ease: 'none', duration: 0.8 }, 0)
-      .to(cells, { scaleX: 1, ease: 'power2.inOut', duration: 0.2, stagger: { each: 0.026 } }, 0.38)
-      // hold on the fully tiled frame so the scrub lag never lets the hero peek out when the pin releases
-      .to({}, { duration: 0.3 });
-    return () => { wipe.innerHTML = ''; };
-  });
+    },
+  })
+    .to(bg, { scale: 1.1, ease: 'none', duration: 1 }, 0)
+    .to(content, { y: () => vh() * 0.3, autoAlpha: 0, ease: 'power1.in', duration: 0.38 }, 0)
+    .to(word, { y: () => vh() * 0.74, scale: 1.6, ease: 'power2.in', duration: 1 }, 0)
+    .to(object, { y: () => vh() * 0.98, scale: 1.3, ease: 'power2.in', duration: 0.94 }, 0.06)
+    // the dark ground recedes downwards under a soft edge (no grey cross-fade): the light manifesto shows from the top
+    // (it starts once the manifesto sits fully under the screen: a third of the pin, see .motion .manifesto)
+    .set(stage, { backgroundColor: 'rgba(0, 2, 41, 0)' }, 0.42)
+    .fromTo(bg, { '--lift': '100%' }, { '--lift': '0%', ease: 'power1.inOut', duration: 0.48 }, 0.42)
+    .set(bg, { autoAlpha: 0 }, 0.9) // swept away: drop the layer so its composited edge leaves no trace
+    .to(stage, { '--grain': 0, ease: 'none', duration: 0.4 }, 0.44)
+    .to(word, { '--stroke': 'rgba(0, 2, 41, 0.3)', ease: 'none', duration: 0.4 }, 0.46)
+    // hold on the empty, light frame so the scrub lag never shows a remnant of the hero when the pin lets go
+    .to({}, { duration: 0.22 });
 
   // ---- Entrance (after the intro, or immediately on return visits)
   function enter() {
