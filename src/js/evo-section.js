@@ -72,8 +72,6 @@ export async function evolutionStage({ videos }) {
   const video = section.querySelector('.film__video');
   const intro = section.querySelector('.evo__intro');
   const foot = section.querySelector('.film__foot');
-  const wordA = section.querySelector('.evo__word--a');
-  const wordB = section.querySelector('.evo__word--b');
 
   section.classList.add('is-gl');
   const poster = new Image();
@@ -125,16 +123,6 @@ export async function evolutionStage({ videos }) {
     const fadeIntro = range(t, 0.1, 0.32);
     intro.style.opacity = String(1 - fadeIntro);
     intro.style.transform = `translate3d(0, ${-fadeIntro * 8}vh, 0)`;
-    // the two words ride the travelling panel — one above its left corner, one below its right corner —
-    // in the dark around it, never over the film, and always inside the screen
-    const words = range(t, 0.16, 0.28) * (1 - range(t, 0.52, 0.62));
-    const gap = 18;
-    const r = s.rect;
-    const maxX = pin.clientWidth - wordB.offsetWidth - 16;
-    wordA.style.opacity = wordB.style.opacity = String(words);
-    wordA.style.transform = `translate3d(${Math.max(16, r.x)}px, ${r.y - gap - wordA.offsetHeight}px, 0)`;
-    wordB.style.transform = `translate3d(${Math.min(maxX, r.x + r.w - wordB.offsetWidth)}px, ${r.y + r.h + gap}px, 0)`;
-
     const handoff = range(t, 0.82, 0.88);
     player.style.opacity = String(handoff);
     player.style.visibility = handoff > 0 ? 'visible' : 'hidden';
