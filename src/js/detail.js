@@ -9,13 +9,17 @@ import { canRunGL } from './evo-section.js';
  * feels like a stop: far words lean back in a cool grey, the one in the middle stands in full ink with its line of
  * text, and receives its own 3D object (detail3d.js). The small brand pieces drifting around it belong to the sky
  * shared with the neighbouring sections (flow.js).
+ * Each word is a stop: when it reaches the middle the page holds still while its object flies in (in time, not
+ * with the scroll, so every frame of the flight is drawn), and lets go once it has landed. Scrolling back up sends
+ * the object away again, so the stop comes back on the way down.
  * Without WebGL, on weak devices and with reduced motion it stays a calm, static list (see the CSS).
  */
 
 const START = -1.25; // the first word starts just below the fold, under the title
 const END_PAD = 0.35; // and the last one is on its way up when the pin lets go
+const FLIGHT = 2.6; // seconds an object takes to land beside its word
 
-export function initDetail({ reduce, finePointer }) {
+export function initDetail({ reduce, finePointer, lenis }) {
   const section = document.querySelector('.detail');
   if (reduce || !canRunGL()) return;
   section.classList.add('is-live');
@@ -36,7 +40,7 @@ export function initDetail({ reduce, finePointer }) {
     top = section.getBoundingClientRect().top + window.scrollY;
     height = section.offsetHeight;
     H = pin.clientHeight;
-    slot = H * (pin.clientWidth < 760 ? 0.46 : 0.42);
+    slot = H * (pin.clientWidth < 760 ? 0.62 : 0.66); // generous room between the words
     wordH = words.map((w) => w.offsetHeight);
   };
   measure();
@@ -62,8 +66,62 @@ export function initDetail({ reduce, finePointer }) {
   }
   new ResizeObserver(() => { measure(); stage?.resize(); }).observe(pin);
 
+  // ---- the stops: hold the page on a word until its object has landed
+  const flights = items.map(() => ({ p: 0, go: false, landed: false })); // p: 0 → 1 over FLIGHT seconds
+  let held = -1;
+  let holdY = 0;
+  if (import.meta.env.DEV) window.__detail = { flights, held: () => held }; // dev aid: QA scripts read the stops
+  const root = document.documentElement;
+  const stopAt = (i) => st.start + ((i - START) / (END - START)) * (st.end - st.start);
+  const KEYS = new Set(['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Space', ' ', 'End', 'Home']);
+  const block = (e) => { if (held >= 0 && (e.type !== 'keydown' || KEYS.has(e.key))) e.preventDefault(); };
+  ['wheel', 'touchmove', 'keydown'].forEach((type) => window.addEventListener(type, block, { passive: false }));
+  function hold(i) {
+    held = i;
+    holdY = stopAt(i);
+    flights[i].go = true;
+    // glide back onto the word if the scroll went a little past it, then keep the page still. Lenis does it on
+    // desktop; with native scrolling (touch) the frame loop pulls the page onto the word and keeps it there, which
+    // also stops the momentum of a flick that blocking the events alone would let through
+    if (lenis) lenis.scrollTo(holdY, { duration: 0.9, lock: true, force: true, onComplete: () => { if (held === i) lenis.stop(); } });
+    else root.classList.add('is-holding');
+  }
+  function release() {
+    held = -1;
+    lenis?.start();
+    root.classList.remove('is-holding');
+  }
+
+  let c = START; // the cursor as drawn: it follows the scroll with a little easing, so even a coarse scroll moves smoothly
+  let prevTarget = START;
+  let last = 0;
   function frame(time) {
-    const c = START + st.progress * (END - START);
+    const dt = Math.min(0.05, last ? time - last : 0);
+    last = time;
+    const target = START + st.progress * (END - START);
+    c += (target - c) * (1 - Math.exp(-dt * 7));
+
+    // a word reached on the way down whose object has not landed yet: stop there (once the 3D stage is ready;
+    // until then, or if the page got past the word some other way, the object simply flies without the stop)
+    if (held < 0 && stage && target > prevTarget) {
+      for (let i = 0; i < items.length; i++) {
+        if (!flights[i].go && prevTarget < i + 0.02 && target >= i - 0.02) { hold(i); break; }
+      }
+    }
+    prevTarget = target;
+    if (held >= 0 && !lenis) {
+      const y = window.scrollY;
+      if (Math.abs(holdY - y) > 0.5) window.scrollTo(0, y + (holdY - y) * (1 - Math.exp(-dt * 9)));
+    }
+    flights.forEach((f, i) => {
+      if (!f.go && held !== i && target >= i - 0.02 && (held < 0 ? !stage || target > i + 0.3 : true)) f.go = true;
+      if (f.go) f.p = Math.min(1, f.p + dt / FLIGHT);
+      else f.p = Math.max(0, f.p - dt / (FLIGHT * 0.6));
+      if (f.go && f.p >= 1 && !f.landed) { f.landed = true; if (held === i) release(); }
+      // well back above the word: the object leaves, and the stop comes back
+      if (held !== i && target < i - 0.8) { f.go = false; f.landed = false; }
+    });
+
     // before and after the pin the whole section simply scrolls with the page; inside it the words take over
     head.style.transform = `translate3d(0, ${(-(c - START) * slot).toFixed(1)}px, 0)`;
     items.forEach((li, i) => {
@@ -81,7 +139,7 @@ export function initDetail({ reduce, finePointer }) {
     // the 3D field fades at the section's edges instead of being cut by them
     const rTop = top - window.scrollY;
     canvas.style.opacity = gsap.utils.clamp(0, 1, Math.min((H - rTop) / (H * 0.5), (rTop + height) / (H * 0.5))).toFixed(3);
-    stage?.frame(c, slot, time);
+    stage?.frame(c, slot, time, flights);
   }
 
   // runs only while the section is on screen

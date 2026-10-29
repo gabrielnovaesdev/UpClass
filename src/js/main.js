@@ -11,6 +11,8 @@ import { initNav } from './nav.js';
 import { initSections } from './sections.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
+// on phones the address bar shows and hides while scrolling: no full recalculation (and jump) every time it does
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 const root = document.documentElement;
 window.__upcReady = true;

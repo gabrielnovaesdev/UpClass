@@ -2,34 +2,28 @@ import {
   CanvasTexture,
   Color,
   DirectionalLight,
-  ExtrudeGeometry,
   Fog,
   Group,
   HemisphereLight,
   Mesh,
-  MeshPhysicalMaterial,
   NeutralToneMapping,
   PerspectiveCamera,
-  PMREMGenerator,
   Scene,
-  Shape,
   SRGBColorSpace,
   WebGLRenderer,
 } from 'three';
-import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { buildMark } from './bolt3d.js';
 import { makeIphone } from './iphone3d.js';
-import { makeBox, makeConstruction, makeCrystal } from './heroes3d.js';
+import { makeBadge, makeBag, makeBubble, softenSilhouettes, studioEnvironment } from './heroes3d.js';
+import { porcelainMaterial, voxelIcons } from './voxels3d.js';
 
 /*
  * Two 3D stages that share one look:
  * - the stage of "Detalhes" (detail.js drives it), a canvas over that section with one object per word, rising with
- *   it and turning on its own: the Upclass box opening (Procedência), the mark drawn by its construction lines and
- *   poured into chrome (Precisão), a real iPhone (iPhone) and the two bolts in crystal coming together (Pós-venda);
+ *   it and turning on its own: a real iPhone (iPhone), a verified badge (Procedência), the
+ *   Upclass bag with the box inside (Entrega) and a message bubble (Atendimento);
  * - the field (flow.js drives it), a canvas in the sky shared by the name, the details, the collection and the
- *   moments: small brand pieces (bolts, phones, arrows) in frosted pearl, spread in depth. They drift and turn all
+ *   moments: pixel icons of the store and its mark built from solid blocks (voxels3d.js), matte porcelain,
+ *   scattered in depth as in Noomo's background. They drift and sway all
  *   the time and slide with the scroll at a speed that depends on their distance, so the space reads as deep and
  *   carries on from one section to the next.
  * The light mist of the page is the fog, so the far pieces dissolve into it.
@@ -80,28 +74,6 @@ function loadImage(src) {
   });
 }
 
-function centred(geo) {
-  geo.computeBoundingBox();
-  const b = geo.boundingBox;
-  const h = b.max.y - b.min.y;
-  geo.translate(-(b.min.x + b.max.x) / 2, -(b.min.y + b.max.y) / 2, -(b.min.z + b.max.z) / 2);
-  geo.scale(1 / h, 1 / h, 1 / h); // unit height
-  geo.rotateX(Math.PI); // svg y points down; a turn (not a mirror) keeps the faces pointing outwards
-  return geo;
-}
-
-function pieceGeometries(svgText) {
-  const [upper] = new SVGLoader().parse(svgText).paths.map((p) => SVGLoader.createShapes(p));
-  const bolt = centred(new ExtrudeGeometry(upper, { depth: 28, bevelEnabled: true, bevelThickness: 10, bevelSize: 6, bevelSegments: 3, curveSegments: 10 }));
-  const phone = new RoundedBoxGeometry(0.5, 1, 0.08, 3, 0.08);
-  // an arrow, as in the arrows built into the mark
-  const a = new Shape();
-  a.moveTo(0, 0.5); a.lineTo(0.42, 0.06); a.lineTo(0.16, 0.06); a.lineTo(0.16, -0.5);
-  a.lineTo(-0.16, -0.5); a.lineTo(-0.16, 0.06); a.lineTo(-0.42, 0.06); a.lineTo(0, 0.5);
-  const arrow = new ExtrudeGeometry(a, { depth: 0.1, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 2 });
-  arrow.translate(0, 0, -0.05);
-  return [bolt, phone, arrow];
-}
 
 // renderer, camera, mist and the brand's lights: what both stages share
 function baseStage(canvas, host, lite) {
@@ -112,9 +84,7 @@ function baseStage(canvas, host, lite) {
 
   const scene = new Scene();
   scene.fog = new Fog(MIST, 11, 24);
-  const pmrem = new PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
-  pmrem.dispose();
+  scene.environment = studioEnvironment(renderer);
   const camera = new PerspectiveCamera(30, 1, 0.1, 60);
   camera.position.set(0, 0, 12);
   const key = new DirectionalLight(0xffffff, 1.1);
@@ -163,55 +133,80 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
   const { renderer, scene, camera, view } = base;
 
   // ---- the four protagonists, in the order of the words (heroes3d.js, iphone3d.js)
-  const [precision, crystal, boltImg] = await Promise.all([
-    buildMark(renderer, svgText),
-    buildMark(renderer, svgText),
-    loadImage('/img/bolt-art-700.webp'),
-  ]);
+  const boltImg = await loadImage('/img/bolt-art-700.webp');
+  await document.fonts?.ready; // the name on the bag is drawn in Ibrand
   const phone = makeIphone(screenTexture(boltImg));
   const heroes = [
-    makeBox(boltImg), // Procedência
-    makeConstruction(precision), // Precisão
     { obj: phone, height: phone.userData.height, svg: false }, // iPhone
-    makeCrystal(crystal), // Pós-venda
+    makeBadge(), // Procedência
+    makeBag(boltImg), // Entrega
+    makeBubble(), // Atendimento
   ].map((hero) => {
     const holder = new Group();
     holder.add(hero.obj);
     holder.userData = hero;
-    holder.visible = false;
     scene.add(holder);
     return holder;
   });
+  softenSilhouettes(scene);
+  // compile every material now, off the main thread where the browser allows it: otherwise the first frame an
+  // object appears in stalls the page for seconds, right in the middle of its flight
+  await (renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera)));
+  // one draw with everything on stage uploads the textures too, then the canvas is cleared
+  renderer.render(scene, camera);
+  heroes.forEach((holder) => { holder.visible = false; });
+  renderer.render(scene, camera);
 
   return {
     resize: base.resize,
     pointer: base.pointer,
     dispose: base.dispose,
-    /** c: the scroll cursor (index of the word at the centre, fractional); slot: pixels between two words; t: seconds. */
-    frame(c, slot, t) {
+    /**
+     * c: the scroll cursor (index of the word at the centre, fractional); slot: pixels between two words; t: seconds;
+     * flights: per object, p 0 → 1 as it flies in (timed by detail.js while the page holds on its word).
+     */
+    frame(c, slot, t, flights) {
       const { visibleH, aspect, hostH } = view;
       const pxToWorld = visibleH / hostH;
       const narrow = aspect < 0.8;
-      const objH = visibleH * (narrow ? 0.2 : 0.3);
+      const objH = visibleH * (narrow ? 0.15 : 0.36);
       base.lean();
 
+      const viewW = visibleH * aspect;
       let any = false;
       heroes.forEach((holder, i) => {
         const d = i - c;
-        // pops in as its word reaches the middle, stays with it on the way up, then lets go
-        const show = smooth(0.62, 0.1, d) * smooth(-1.6, -1.0, d);
-        holder.visible = show > 0.002;
+        const u = flights[i]?.p ?? 0;
+        // hidden until its flight starts, and again once its word has scrolled out of the top
+        holder.visible = u > 0.001 && d > -1.75;
         if (!holder.visible) return;
         any = true;
-        const grow = 1 - Math.pow(1 - show, 3);
+        // e: 0 → 1 over the flight, eased in and out (smootherstep), so it starts gently, keeps going and settles
+        // without a stop
+        const e = u * u * u * (u * (u * 6 - 15) + 10);
+        // alternate sides: the first comes from the right and settles on the left, the next the other way round
+        const dir = i % 2 ? -1 : 1;
+        const settle = -dir * viewW * (narrow ? 0.13 : 0.335);
+        // a smooth curve in space (cubic Bézier in x and depth): far and small behind the text, then closer and
+        // larger until it rests beside its word
+        const k = 1 - e;
+        const b0 = k * k * k;
+        const b1 = 3 * k * k * e;
+        const b2 = 3 * k * e * e;
+        const b3 = e * e * e;
+        const x = b0 * dir * viewW * 1.0 + b1 * dir * viewW * 0.45 + b2 * settle * 1.2 + b3 * settle;
+        const z = b0 * -9 + b1 * -7 + b2 * -1.6 + b3 * 0.8;
+        // it rides with its word: beside it on wide screens, just above it on narrow ones, where the word fills the width
+        const y = -d * slot * pxToWorld + (narrow ? 0.13 : 0.03) * visibleH;
         const unit = objH / holder.userData.height;
         holder.userData.obj.scale.set(unit, holder.userData.svg ? -unit : unit, unit);
-        holder.scale.setScalar(0.35 + 0.65 * grow);
-        holder.position.set(0, -d * slot * pxToWorld + (narrow ? 0.035 : 0.02) * visibleH, 0.8);
-        holder.rotation.y = t * 0.55 + i * 1.3 + (1 - grow) * 2.2;
-        holder.rotation.x = Math.sin(t * 0.5 + i) * 0.14;
-        holder.rotation.z = Math.sin(t * 0.37 + i * 2) * 0.05;
-        holder.userData.animate?.(t, grow);
+        holder.scale.setScalar((0.3 + 0.7 * e) * smooth(0, 0.08, u));
+        holder.position.set(x, y, z);
+        // a discreet turn along the way, then a slow idle spin
+        holder.rotation.y = t * 0.35 + i * 1.3 + k * dir * 1.1;
+        holder.rotation.x = Math.sin(t * 0.5 + i) * 0.1;
+        holder.rotation.z = k * dir * 0.18 + Math.sin(t * 0.37 + i * 2) * 0.04;
+        holder.userData.animate?.(t, e);
       });
       // nothing on stage: one last clear, then no more draws until a word brings its object back
       if (any || base.drawn) renderer.render(scene, camera);
@@ -224,24 +219,23 @@ export function createField(canvas, host, svgText, { lite = false } = {}) {
   const base = baseStage(canvas, host, lite);
   const { renderer, scene, camera, view } = base;
 
-  const geos = pieceGeometries(svgText);
-  // frosted pearl: lit from inside a little, so no face ever turns grey against the mist
-  const glass = new MeshPhysicalMaterial({
-    color: 0xffffff, emissive: 0xd9d6f6, emissiveIntensity: 0.55, roughness: 0.45, metalness: 0,
-    clearcoat: 1, clearcoatRoughness: 0.2, iridescence: 0.5, iridescenceIOR: 1.3,
-    transparent: true, opacity: 0.88, envMapIntensity: 1,
-  });
+  const geos = voxelIcons();
+  const glass = porcelainMaterial(); // matte porcelain, as in the reference (voxels3d.js)
+  // scattered in depth like Noomo's icons; the nearest are the largest, the far ones dissolve into the mist
   const pieces = [];
-  const count = lite ? 14 : 26;
+  const count = lite ? 10 : 18;
   for (let i = 0; i < count; i++) {
-    const m = new Mesh(geos[i % 3], glass);
-    const z = -9 + rand() * 10.5;
+    const m = new Mesh(geos[i % geos.length], glass);
+    // never in the band where the protagonists of the details come to rest (about two thirds out to each side):
+    // most pieces live at the edges of the screen, a few far back behind the words, small and misted
+    const deep = i % 3 === 0;
+    const z = deep ? -4.5 + rand() * 2 : -2 + rand() * 4.5;
     m.userData = {
-      x: (rand() - 0.5) * 2, y: rand(), z,
-      s: (i % 3 === 0 ? 0.42 : 0.36) * (0.7 + rand() * 0.6),
+      x: (i % 2 ? 1 : -1) * (deep ? 0.1 + rand() * 0.28 : 0.95 + rand() * 0.16), y: rand(), z,
+      s: 0.55 + rand() * 0.45,
       rx: rand() * 6, ry: rand() * 6,
       vx: (rand() - 0.5) * 0.5, vy: 0.2 + rand() * 0.5,
-      depth: 0.55 + ((z + 9) / 10.5) * 0.7, // nearer pieces slide faster with the scroll
+      depth: 0.6 + ((z + 3) / 6) * 0.8, // nearer pieces slide faster with the scroll
     };
     m.scale.setScalar(m.userData.s);
     scene.add(m);
@@ -263,8 +257,9 @@ export function createField(canvas, host, svgText, { lite = false } = {}) {
         const zH = 2 * (camera.position.z - u.z) * Math.tan((camera.fov * Math.PI) / 360); // visible height at that depth
         const y = u.y * spanY + scrolled * pxToWorld * u.depth * 0.55 + t * 0.06 * u.vy;
         const wrapped = (((y % spanY) + spanY) % spanY) - spanY / 2;
-        m.position.set(u.x * zH * aspect * 0.55 + Math.sin(t * 0.2 + u.rx) * 0.3, wrapped * (zH / visibleH), u.z);
-        m.rotation.set(u.rx + t * 0.3 * u.vy, u.ry + t * 0.4 * (u.vx + 0.3), Math.sin(t * 0.3 + u.ry) * 0.4);
+        m.position.set(u.x * zH * aspect * 0.5 + Math.sin(t * 0.2 + u.rx) * 0.2, wrapped * (zH / visibleH), u.z);
+        // a slow sway rather than a spin: each piece keeps showing its face, so it reads as what it is
+        m.rotation.set(Math.sin(t * 0.22 * (0.6 + u.vy) + u.rx) * 0.45, Math.sin(t * 0.18 * (0.6 + u.vy) + u.ry) * 0.9, Math.sin(t * 0.26 + u.ry) * 0.3);
       });
       renderer.render(scene, camera);
     },

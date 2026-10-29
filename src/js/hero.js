@@ -76,9 +76,10 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     });
   }
 
-  // ---- Scroll: the hero pins and the bolt makes a full turn; then the camera seems to rise — the wordmark comes closer
-  //      and sinks out of the frame, the bolt follows it, the dark ground lifts away — and the manifesto, already
-  //      waiting underneath on the light mist, drifts down into place (its half lives in sections.js, manifesto()).
+  // ---- Scroll: the hero pins and the bolt makes a full turn; then everything travels up with the scroll — the wordmark
+  //      comes closer and rises out of the frame, the bolt follows it, the dark ground lifts away — and the manifesto,
+  //      already waiting underneath on the light mist, rises into place (its half lives in sections.js, manifesto()).
+  //      A short scrub keeps it close to the finger and the wheel.
   const object = hero.querySelector('.hero__object');
   const content = hero.querySelector('.hero__content');
   const vh = () => window.innerHeight;
@@ -89,7 +90,7 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
       start: 'top top',
       end: () => `+=${vh() * 1.5}`,
       pin: true,
-      scrub: 0.6,
+      scrub: finePointer ? 0.35 : 0.2,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
         bolt?.scroll(self.progress);
@@ -98,13 +99,13 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     },
   })
     .to(bg, { scale: 1.1, ease: 'none', duration: 1 }, 0)
-    .to(content, { y: () => vh() * 0.3, autoAlpha: 0, ease: 'power1.in', duration: 0.38 }, 0)
-    .to(word, { y: () => vh() * 0.74, scale: 1.6, ease: 'power2.in', duration: 1 }, 0)
-    .to(object, { y: () => vh() * 0.98, scale: 1.3, ease: 'power2.in', duration: 0.94 }, 0.06)
-    // the dark ground recedes downwards under a soft edge (no grey cross-fade): the light manifesto shows from the top
+    .to(content, { y: () => -vh() * 0.3, autoAlpha: 0, ease: 'power1.in', duration: 0.38 }, 0)
+    .to(word, { y: () => -vh() * 1.1, scale: 1.6, ease: 'power2.in', duration: 0.9 }, 0)
+    .to(object, { y: () => -vh() * 1.25, scale: 1.3, ease: 'power2.in', duration: 0.86 }, 0.06)
+    // the dark ground lifts away under a soft edge (no grey cross-fade): the light manifesto shows from the bottom
     // (it starts once the manifesto sits fully under the screen: a third of the pin, see .motion .manifesto)
     .set(stage, { backgroundColor: 'rgba(0, 2, 41, 0)' }, 0.42)
-    .fromTo(bg, { '--lift': '100%' }, { '--lift': '0%', ease: 'power1.inOut', duration: 0.48 }, 0.42)
+    .fromTo(bg, { '--lift': '0%' }, { '--lift': '100%', ease: 'power1.inOut', duration: 0.48 }, 0.42)
     .set(bg, { autoAlpha: 0 }, 0.9) // swept away: drop the layer so its composited edge leaves no trace
     .to(stage, { '--grain': 0, ease: 'none', duration: 0.4 }, 0.44)
     .to(word, { '--stroke': 'rgba(0, 2, 41, 0.3)', ease: 'none', duration: 0.4 }, 0.46)

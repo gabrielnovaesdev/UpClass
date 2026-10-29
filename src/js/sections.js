@@ -30,7 +30,7 @@ export function initSections({ reduce, lenis, finePointer }) {
 
   manifesto();
   // the details pin (see detail.js) is created here; ScrollTrigger.sort() below puts it back in page order
-  initDetail({ reduce, finePointer });
+  initDetail({ reduce, finePointer, lenis });
   values();
   bento();
   moments();
@@ -52,7 +52,7 @@ export function initSections({ reduce, lenis, finePointer }) {
 
 /* ---- 01 Manifesto: the sentence sharpens word by word as you scroll (Lia).
    It starts under the pinned hero: while it rises, its inner layer is held to the screen, so when the hero's dark
-   ground lifts the manifesto is already there, and its title drifts down from above into place (Noomo). */
+   ground lifts the manifesto is already there, and its title rises from below into place, with the scroll (Noomo). */
 function manifesto() {
   const inner = document.querySelector('.manifesto__inner');
   const title = document.querySelector('.manifesto__title');
@@ -60,7 +60,7 @@ function manifesto() {
   const pillars = document.querySelectorAll('.manifesto__pillars li');
   const handOver = { trigger: '.manifesto', end: 'top top', invalidateOnRefresh: true };
   gsap.fromTo(inner, { y: () => -window.innerHeight }, { y: 0, ease: 'none', scrollTrigger: { ...handOver, start: 'top bottom', scrub: true } });
-  gsap.fromTo(title, { y: () => -window.innerHeight * 0.42 }, { y: 0, ease: 'power2.out', scrollTrigger: { ...handOver, start: 'top 85%', scrub: 0.6 } });
+  gsap.fromTo(title, { y: () => window.innerHeight * 0.32 }, { y: 0, ease: 'power2.out', scrollTrigger: { ...handOver, start: 'top 85%', scrub: 0.4 } });
   // split inside the accent too, so the gradient word resolves with the rest
   const words = SplitText.create(title, { type: 'words', wordsClass: 'word' }).words;
   const narrow = window.matchMedia('(max-width: 760px)').matches;
