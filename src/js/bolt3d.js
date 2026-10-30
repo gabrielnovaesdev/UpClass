@@ -9,7 +9,7 @@ import {
   Mesh,
   MeshPhysicalMaterial,
   NeutralToneMapping,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   PerspectiveCamera,
   PMREMGenerator,
   Scene,
@@ -22,6 +22,7 @@ import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import gsap from 'gsap';
+import { createShatter } from './shatter.js';
 
 export const VB_W = 323.2;
 export const VB_H = 553.99;
@@ -174,7 +175,7 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
   renderer.toneMapping = NeutralToneMapping;
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = PCFSoftShadowMap;
+  renderer.shadowMap.type = PCFShadowMap; // (PCFSoft is gone from three: asking for it recompiles every shader on the first shadow pass)
 
   const scene = new Scene();
   const pmrem = new PMREMGenerator(renderer);
@@ -223,6 +224,9 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     scene.add(refl);
   }
   const mirror = new Matrix4();
+  // the mirror floor, ready to break (hero only, see shatter.js)
+  const glass = mode === 'hero' ? createShatter({ scene, lite: host.clientWidth < 760 }) : null;
+  let glassT = 0; // the break's clock, set by the scroll (hero.js)
   let visibleH = 1;
   let baseY = 0;
   let unit = 1; // world units per svg unit
@@ -249,6 +253,7 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
 
   let running = false;
   function tick(time) {
+    glass?.at(glassT);
     if (mode === 'hero' && !state.freeze) { // freeze: dev-only pose lock for side-by-side checks
       state.px += (state.tx - state.px) * 0.05;
       state.py += (state.ty - state.py) * 0.05;
@@ -309,6 +314,26 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     /** f: { x, y (centre, fractions of the screen), s (scale), turn, bank (radians), idle (0–1), refl (0–1) }, or null for home. */
     flight(f) {
       state.f = f;
+    },
+    /**
+     * The mirror floor (hero): build(picture, floor, x) cuts the floor below `floor` (fraction of the screen) into
+     * shards carrying `picture` (its 2D canvas), breaking from `x`; at(t) poses the break t seconds in (t ≤ 0:
+     * whole).
+     */
+    mirror: {
+      build(picture, floor, x) {
+        const vw = visibleH * camera.aspect;
+        const top = (0.5 - floor) * visibleH;
+        const tex = glass.build({ left: -vw / 2, right: vw / 2, top, bottom: -visibleH / 2 }, { x: (x - 0.5) * vw, y: top }, picture);
+        // shaders and the picture on the GPU now, so the break itself never waits on them
+        const was = glass.group.visible;
+        glass.group.visible = true; // (compile skips what is hidden)
+        renderer.compile(scene, camera);
+        glass.group.visible = was;
+        renderer.initTexture(tex);
+      },
+      at(t) { glassT = t; },
+      get built() { return glass.built; },
     },
     /** the resting pose: centre (fraction of the screen) and height (fraction of the screen) at full size. */
     home() {

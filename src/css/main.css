@@ -316,7 +316,7 @@ img { display: block; max-width: 100%; }
   /* no negative tracking: at this size it pushed the bowl of the "p" into the "c"; the size keeps the old width */
   font-size: 26.6vw; line-height: 0.8; letter-spacing: 0;
   padding: 0.06em 0.04em 0.24em; /* background-clip paints only inside the box: keep the "p" descender in it */
-  transform: translateY(5.5vw);
+  transform: translateY(calc(5.5vw + var(--sink, 0px))); /* --sink stands it on the mirror (hero.js) */
   white-space: nowrap;
 }
 .hero__word-outline { color: transparent; -webkit-text-stroke: 1px var(--stroke, rgba(241, 239, 250, 0.24)); }
@@ -359,25 +359,8 @@ img { display: block; max-width: 100%; }
   position: absolute; left: 0; right: 0; top: var(--floor); bottom: 0;
   background: linear-gradient(180deg, rgba(10, 8, 52, 0.38), rgba(4, 4, 40, 0.78) 45%, #000229 92%);
 }
-/* the horizon: a hairline of the brand's light, brightest under the mark, gone at the edges */
-.hero__floor::before {
-  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
-  background: linear-gradient(90deg, transparent 6%, rgba(128, 255, 255, 0.28) 30%, rgba(214, 196, 255, 0.75) 50%, rgba(252, 57, 206, 0.32) 70%, transparent 94%);
-}
-/* and the soft sheen of the lacquer just below it */
-.hero__floor::after {
-  content: ""; position: absolute; left: 10%; right: 10%; top: 0; height: 18%;
-  background: radial-gradient(50% 100% at 50% 0%, rgba(160, 150, 255, 0.16), transparent 100%);
-}
-.hero__pool {
-  position: absolute; left: 50%; top: var(--floor); width: 64vh; height: 9vh; transform: translate(-50%, -50%);
-  border-radius: 50%; filter: blur(18px);
-  background:
-    radial-gradient(closest-side at 40% 50%, rgba(252, 57, 206, 0.55), transparent 75%),
-    radial-gradient(closest-side at 62% 50%, rgba(63, 116, 255, 0.55), transparent 75%);
-  animation: pool-breathe 8.4s ease-in-out infinite;
-}
-@keyframes pool-breathe { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 50% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; } }
+/* the mirror itself (hero.js paints it, and hides it while its shards are in the air, see shatter.js) */
+.hero__mirror { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .hero__fallback { position: relative; height: 40vh; width: auto; opacity: 0; }
 .no-webgl .hero__fallback, .reduce-motion .hero__fallback { opacity: 1; }
 
@@ -387,27 +370,17 @@ img { display: block; max-width: 100%; }
   padding: 0 var(--gutter) clamp(20px, 3.2vh, 40px);
   pointer-events: none;
 }
-.hero__bottom { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 24px; }
+.hero__bottom { display: flex; align-items: flex-end; }
 .hero__lead {
   font-family: var(--display);
   font-size: clamp(30px, 3.1vw, 58px); line-height: 1; letter-spacing: -0.025em;
   max-width: 9em;
 }
-.hero__note { justify-self: end; text-align: right; line-height: 1.55; opacity: 0.7; }
 
-/* scroll cue: a hairline with a drop of light running down it */
-.hero__scroll { position: relative; display: block; width: 1px; height: 52px; background: rgba(241, 239, 250, 0.2); overflow: hidden; }
-.hero__scroll i {
-  position: absolute; left: 0; top: 0; width: 1px; height: 40%;
-  background: linear-gradient(transparent, var(--light));
-  animation: scroll-cue 2.4s var(--ease-io) infinite;
-}
-@keyframes scroll-cue { 0% { transform: translateY(-100%); } 60%, 100% { transform: translateY(260%); } }
 
 /* initial states for the entrance (only when JS + motion are on) */
 .motion .hero__word-line,
 .motion [data-words],
-.motion .hero__scroll,
 .motion .nav { visibility: hidden; }
 
 @media (max-width: 760px) {
@@ -416,13 +389,9 @@ img { display: block; max-width: 100%; }
   .nav__menu { padding: 0 15px; }
   .nav__cta { padding: 0 15px; font-size: 12px; }
   .nav__cta svg { display: none; }
-  .hero__word-line { font-size: 28vw; transform: translateY(-2vh); }
+  .hero__word-line { font-size: 28vw; transform: translateY(calc(-2vh + var(--sink, 0px))); }
   .hero__set { --floor: 62.5%; }
-  .hero__pool { width: 40vh; height: 6vh; }
   .hero__halo { top: 43%; }
-  .hero__bottom { grid-template-columns: 1fr; gap: 16px; }
-  .hero__scroll { display: none; }
-  .hero__note { justify-self: start; text-align: left; }
   .hero__fallback { height: 34vh; }
 }
 /* the narrowest phones: the side columns take what they need, so "Fale conosco" never runs into the wordmark */
