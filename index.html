@@ -106,12 +106,13 @@
           <span class="hero__word-line hero__word-lit">upclass</span>
         </div>
 
-        <!-- the stage the mark stands on: a beam from above, a lacquered floor with a lit horizon (the mark itself and
-             its reflection are drawn in .mark, so it can leave the hero) -->
+        <!-- the stage the mark stands on: a beam from above and a mirror floor. The mirror (the lacquer, its lit horizon,
+             the glow under the mark and the wordmark's reflection) is painted in a 2D canvas, so that the very same
+             picture can shatter into shards when the mark dives through it (hero.js, bolt3d.js). The mark and its own
+             reflection are drawn in .mark, so it can leave the hero -->
         <div class="hero__set" aria-hidden="true">
           <div class="hero__beam"></div>
-          <div class="hero__floor"></div>
-          <div class="hero__pool"></div>
+          <div class="hero__floor"><canvas class="hero__mirror"></canvas></div>
         </div>
 
         <div class="hero__object" aria-hidden="true">
@@ -123,8 +124,6 @@
           <h1 class="sr-only" id="hero-title">Upclass — iPhones e acessórios com procedência garantida</h1>
           <div class="hero__bottom">
             <p class="hero__lead" data-words>Você sabe quando é bom de&nbsp;verdade.</p>
-            <span class="hero__scroll" aria-hidden="true"><i></i></span>
-            <p class="hero__note caps" data-words>iPhones e acessórios<br />com procedência garantida<br />Baixada Fluminense — RJ</p>
           </div>
         </div>
 
@@ -145,7 +144,7 @@
           <h2 class="manifesto__title" id="manifesto-title">
             <span class="manifesto__line manifesto__line--lead"><span class="manifesto__text">Não vendemos um aparelho.</span></span>
             <span class="manifesto__line"><span class="manifesto__text">Vendemos o que ele</span></span>
-            <span class="manifesto__line"><span class="manifesto__text">representa.<span class="manifesto__seat" aria-hidden="true"><img src="/img/bolt-art-700.webp" alt="" width="409" height="701" loading="lazy" decoding="async" /></span></span></span>
+            <span class="manifesto__line"><span class="manifesto__text">representa<span class="manifesto__seat" aria-hidden="true"><img src="/img/bolt-art-700.webp" alt="" width="409" height="701" loading="lazy" decoding="async" /></span></span></span>
           </h2>
           <div class="manifesto__bottom">
             <p class="manifesto__note">Cada produto é um símbolo silencioso de evolução. Para alguns, é a porta de entrada. Para outros, uma atualização de imagem. Para todos, um passo natural — como se sempre tivesse feito parte da vida.</p>
