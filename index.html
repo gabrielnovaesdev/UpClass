@@ -28,6 +28,7 @@
   </script>
   <link rel="stylesheet" href="/src/css/main.css" />
   <link rel="stylesheet" href="/src/css/sections.css" />
+  <link rel="stylesheet" href="/src/css/finale.css" />
 </head>
 <body>
   <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
@@ -361,46 +362,56 @@
     </div>
 
     <section class="promise" id="diferenciais" data-theme="dark" aria-labelledby="promise-title">
-      <div class="promise__head">
+      <header class="promise__head">
         <h2 class="promise__title" id="promise-title">Somos a melhor escolha para quem busca uma compra <em>segura.</em></h2>
         <p class="promise__lead">Comprar um iPhone não precisa vir com dúvida. Por isso cuidamos de cada etapa — antes, durante e depois.</p>
-      </div>
-      <div class="bento">
-        <article class="tile tile--store">
-          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 50vw" /><img src="/img/mk/wall-800.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 50vw" alt="Parede da loja com o logotipo Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
-          <div class="tile__body"><span class="caps">01</span><h3 class="tile__title">Loja física</h3><p>Um endereço de verdade para ver de perto, tirar dúvidas e voltar quando quiser.</p></div>
-        </article>
-        <article class="tile tile--origin">
-          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/box-800.avif 800w, /img/mk/box-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 25vw" /><img src="/img/mk/box-800.webp" srcset="/img/mk/box-800.webp 800w, /img/mk/box-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 25vw" alt="Caixa Upclass com o símbolo do raio" width="800" height="572" loading="lazy" decoding="async" /></picture></div>
-          <div class="tile__body"><span class="caps">02</span><h3 class="tile__title">Procedência garantida</h3><p>Aparelhos com origem comprovada e responsabilidade em cada etapa.</p></div>
-        </article>
-        <article class="tile tile--quote">
-          <p class="caps">Nosso slogan, nosso padrão</p>
-          <p class="tile__quote">Nada menos do que você espera.</p>
-        </article>
-        <article class="tile tile--delivery">
-          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/giftbag-800.avif 800w, /img/mk/giftbag-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 25vw" /><img src="/img/mk/giftbag-800.webp" srcset="/img/mk/giftbag-800.webp 800w, /img/mk/giftbag-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 25vw" alt="Sacola Upclass" width="800" height="600" loading="lazy" decoding="async" /></picture></div>
-          <div class="tile__body"><span class="caps">03</span><h3 class="tile__title">Entrega precisa</h3><p>Do pedido às suas mãos, com o cuidado de quem confere cada detalhe.</p></div>
-        </article>
-        <article class="tile tile--advice">
-          <div class="tile__media"><picture><source type="image/avif" srcset="/img/mk/shirt-800.avif 800w, /img/mk/shirt-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 25vw" /><img src="/img/mk/shirt-800.webp" srcset="/img/mk/shirt-800.webp 800w, /img/mk/shirt-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 25vw" alt="Camisa do uniforme Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></div>
-          <div class="tile__body"><span class="caps">04</span><h3 class="tile__title">Atendimento consultivo</h3><p>Menos vendedor, mais parceiro. A gente ajuda você a escolher o modelo certo.</p></div>
-        </article>
-        <article class="tile tile--after">
-          <div class="tile__media tile__media--video">
-            <video data-lazy data-autoplay muted loop playsinline preload="none" poster="/video/bolts-glass-poster.webp" aria-hidden="true">
-              <source data-src="/video/bolts-glass.webm" type="video/webm" />
-              <source data-src="/video/bolts-glass.mp4" type="video/mp4" />
-            </video>
-          </div>
-          <div class="tile__body"><span class="caps">05</span><h3 class="tile__title">Pós-venda</h3><p>A relação continua depois da compra. Estamos por aqui para o que precisar.</p></div>
-        </article>
+      </header>
+      <!-- the five promises as an index beside one frame: the one in focus lights up and shows its picture (finale.js) -->
+      <div class="steps">
+        <div class="steps__pin">
+          <ol class="steps__list">
+            <li class="step" data-phase="Antes">
+              <h3 class="step__title"><button class="step__btn" type="button"><span class="step__phase caps">Antes</span><span class="step__name">Loja física</span></button></h3>
+              <div class="step__more"><p class="step__text">Um endereço de verdade para ver de perto, tirar dúvidas e voltar quando quiser.</p></div>
+              <figure class="step__media"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 52vw" /><img src="/img/mk/wall-800.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 52vw" alt="Parede da loja com o logotipo Upclass" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+            </li>
+            <li class="step" data-phase="Antes">
+              <h3 class="step__title"><button class="step__btn" type="button"><span class="step__phase caps">Antes</span><span class="step__name">Atendimento consultivo</span></button></h3>
+              <div class="step__more"><p class="step__text">Menos vendedor, mais parceiro. A gente ajuda você a escolher o modelo certo.</p></div>
+              <figure class="step__media"><picture><source type="image/avif" srcset="/img/mk/totem-800.avif 800w, /img/mk/totem-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 52vw" /><img src="/img/mk/totem-800.webp" srcset="/img/mk/totem-800.webp 800w, /img/mk/totem-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 52vw" alt="Totem digital da Upclass apresentando um iPhone" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+            </li>
+            <li class="step" data-phase="Durante">
+              <h3 class="step__title"><button class="step__btn" type="button"><span class="step__phase caps">Durante</span><span class="step__name">Procedência garantida</span></button></h3>
+              <div class="step__more"><p class="step__text">Aparelhos com origem comprovada e responsabilidade em cada etapa.</p></div>
+              <figure class="step__media"><picture><source type="image/avif" srcset="/img/mk/box-800.avif 800w, /img/mk/box-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 52vw" /><img src="/img/mk/box-800.webp" srcset="/img/mk/box-800.webp 800w, /img/mk/box-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 52vw" alt="Caixa Upclass com o símbolo do raio" width="800" height="572" loading="lazy" decoding="async" /></picture></figure>
+            </li>
+            <li class="step" data-phase="Durante">
+              <h3 class="step__title"><button class="step__btn" type="button"><span class="step__phase caps">Durante</span><span class="step__name">Entrega precisa</span></button></h3>
+              <div class="step__more"><p class="step__text">Do pedido às suas mãos, com o cuidado de quem confere cada detalhe.</p></div>
+              <figure class="step__media"><picture><source type="image/avif" srcset="/img/mk/boxes-800.avif 800w, /img/mk/boxes-1600.avif 1600w" sizes="(max-width: 760px) 92vw, 52vw" /><img src="/img/mk/boxes-800.webp" srcset="/img/mk/boxes-800.webp 800w, /img/mk/boxes-1600.webp 1600w" sizes="(max-width: 760px) 92vw, 52vw" alt="Embalagens Upclass com o símbolo do raio" width="800" height="586" loading="lazy" decoding="async" /></picture></figure>
+            </li>
+            <li class="step" data-phase="Depois">
+              <h3 class="step__title"><button class="step__btn" type="button"><span class="step__phase caps">Depois</span><span class="step__name">Pós-venda</span></button></h3>
+              <div class="step__more"><p class="step__text">A relação continua depois da compra. Estamos por aqui para o que precisar.</p></div>
+              <figure class="step__media step__media--video">
+                <video data-lazy muted loop playsinline preload="none" poster="/video/bolts-glass-poster.webp" aria-hidden="true">
+                  <source data-src="/video/bolts-glass.webm" type="video/webm" />
+                  <source data-src="/video/bolts-glass.mp4" type="video/mp4" />
+                </video>
+              </figure>
+            </li>
+          </ol>
+          <!-- on wide screens the pictures leave their items for one shared frame (finale.js); a hairline tracks the way -->
+          <div class="steps__frame" aria-hidden="true"></div>
+          <div class="steps__track" aria-hidden="true"><i></i></div>
+        </div>
       </div>
     </section>
 
     <section class="upgrade" id="upgrade" data-theme="dark" aria-labelledby="upgrade-title">
       <div class="upgrade__pin">
-        <p class="upgrade__marquee" aria-hidden="true"><span>É hora de dar um up —&nbsp;</span><span>É hora de dar um up —&nbsp;</span><span>É hora de dar um up —&nbsp;</span></p>
+        <!-- the call, split around the bolt: its two halves part as the bolt grows between them -->
+        <p class="upgrade__words" aria-hidden="true"><span class="upgrade__word upgrade__word--a">É hora de</span><span class="upgrade__word upgrade__word--b">dar um up</span></p>
         <div class="upgrade__halo" aria-hidden="true"></div>
         <div class="upgrade__window">
           <video class="upgrade__video" data-lazy muted playsinline preload="none" poster="/video/symbol-poster.webp" aria-hidden="true">
@@ -409,96 +420,60 @@
           </video>
         </div>
         <div class="upgrade__copy">
+          <p class="sr-only">É hora de dar um up.</p>
           <h2 class="upgrade__title" id="upgrade-title">Prepare-se para um upgrade na sua experiência.</h2>
-          <p class="caps upgrade__note upgrade__note--end">Para quem já é Apple<br />e quer o próximo passo.</p>
+          <p class="caps upgrade__note">Para quem já é Apple<br />e quer o próximo passo.</p>
         </div>
       </div>
     </section>
 
     <section class="values atmo" id="valores" data-theme="light" aria-labelledby="values-title">
-      <div class="values__head">
+      <header class="values__head">
         <h2 class="values__title" id="values-title">Confiança se constrói no detalhe.</h2>
-      </div>
+      </header>
+      <!-- mission and vision, set like two pull quotes -->
       <div class="values__mv">
-        <article class="mv">
-          <p class="caps mv__label">Missão</p>
-          <p class="mv__text">Oferecer produtos de extrema qualidade com procedência garantida, criando uma experiência confiável e próxima, com preços acessíveis e atendimento que valoriza cada cliente.</p>
-        </article>
-        <article class="mv">
-          <p class="caps mv__label">Visão</p>
-          <p class="mv__text">Ser referência na Baixada Fluminense em iPhones e produtos Apple, reconhecida por tornar o desejo de ter um iPhone uma realidade acessível, segura e valorizada.</p>
-        </article>
+        <figure class="mv">
+          <figcaption class="caps mv__label">Missão</figcaption>
+          <blockquote class="mv__text">Oferecer produtos de extrema qualidade com procedência garantida, criando uma experiência confiável e próxima, com preços acessíveis e atendimento que valoriza cada cliente.</blockquote>
+        </figure>
+        <figure class="mv">
+          <figcaption class="caps mv__label">Visão</figcaption>
+          <blockquote class="mv__text">Ser referência na Baixada Fluminense em iPhones e produtos Apple, reconhecida por tornar o desejo de ter um iPhone uma realidade acessível, segura e valorizada.</blockquote>
+        </figure>
       </div>
+      <!-- the values: large, one per line; the one passing the middle of the screen stands in full ink (finale.js) -->
       <ol class="values__list">
-        <li class="value">
-          <span class="value__rule" aria-hidden="true"></span>
-          <span class="value__num caps">01</span>
-          <h3 class="value__title">Segurança</h3>
-          <p class="value__text">Aparelhos com garantia de procedência e responsabilidade em cada etapa da compra.</p>
-        </li>
-        <li class="value">
-          <span class="value__rule" aria-hidden="true"></span>
-          <span class="value__num caps">02</span>
-          <h3 class="value__title">Qualidade</h3>
-          <p class="value__text">Produtos selecionados com rigor e cuidado em cada detalhe.</p>
-        </li>
-        <li class="value">
-          <span class="value__rule" aria-hidden="true"></span>
-          <span class="value__num caps">03</span>
-          <h3 class="value__title">Transparência</h3>
-          <p class="value__text">Compromisso com a verdade em todas as relações.</p>
-        </li>
-        <li class="value">
-          <span class="value__rule" aria-hidden="true"></span>
-          <span class="value__num caps">04</span>
-          <h3 class="value__title">Relacionamento</h3>
-          <p class="value__text">Atendimento próximo, humano e contínuo — da venda ao pós-venda.</p>
-        </li>
-        <li class="value">
-          <span class="value__rule" aria-hidden="true"></span>
-          <span class="value__num caps">05</span>
-          <h3 class="value__title">Acesso com dignidade</h3>
-          <p class="value__text">O iPhone ao seu alcance, sem abrir mão da experiência.</p>
-        </li>
+        <li class="value"><h3 class="value__title">Segurança</h3><p class="value__text">Aparelhos com garantia de procedência e responsabilidade em cada etapa da compra.</p></li>
+        <li class="value"><h3 class="value__title">Qualidade</h3><p class="value__text">Produtos selecionados com rigor e cuidado em cada detalhe.</p></li>
+        <li class="value"><h3 class="value__title">Transparência</h3><p class="value__text">Compromisso com a verdade em todas as relações.</p></li>
+        <li class="value"><h3 class="value__title">Relacionamento</h3><p class="value__text">Atendimento próximo, humano e contínuo — da venda ao pós-venda.</p></li>
+        <li class="value"><h3 class="value__title">Acesso com dignidade</h3><p class="value__text">O iPhone ao seu alcance, sem abrir mão da experiência.</p></li>
       </ol>
     </section>
 
     <section class="belong" id="pertencimento" data-theme="dark" aria-labelledby="belong-title">
       <div class="belong__pin">
-        <div class="belong__cols" aria-hidden="true">
-          <div class="belong__col">
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/billboard-800.avif 800w, /img/mk/billboard-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/billboard-800.webp" srcset="/img/mk/billboard-800.webp 800w, /img/mk/billboard-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/box-800.avif 800w, /img/mk/box-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/box-800.webp" srcset="/img/mk/box-800.webp 800w, /img/mk/box-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="572" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/bottle-800.avif 800w, /img/mk/bottle-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/bottle-800.webp" srcset="/img/mk/bottle-800.webp 800w, /img/mk/bottle-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/wall-800.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/tote-800.avif 800w, /img/mk/tote-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/tote-800.webp" srcset="/img/mk/tote-800.webp 800w, /img/mk/tote-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/meeting-800.avif 800w, /img/mk/meeting-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/meeting-800.webp" srcset="/img/mk/meeting-800.webp 800w, /img/mk/meeting-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-          </div>
-          <div class="belong__col">
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/giftbag-800.avif 800w, /img/mk/giftbag-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/giftbag-800.webp" srcset="/img/mk/giftbag-800.webp 800w, /img/mk/giftbag-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/totem-800.avif 800w, /img/mk/totem-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/totem-800.webp" srcset="/img/mk/totem-800.webp 800w, /img/mk/totem-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/drawstring-800.avif 800w, /img/mk/drawstring-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/drawstring-800.webp" srcset="/img/mk/drawstring-800.webp 800w, /img/mk/drawstring-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/jacket-800.avif 800w, /img/mk/jacket-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/jacket-800.webp" srcset="/img/mk/jacket-800.webp 800w, /img/mk/jacket-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/shirt-800.avif 800w, /img/mk/shirt-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/shirt-800.webp" srcset="/img/mk/shirt-800.webp 800w, /img/mk/shirt-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/cases-800.avif 800w, /img/mk/cases-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/cases-800.webp" srcset="/img/mk/cases-800.webp 800w, /img/mk/cases-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="586" loading="lazy" decoding="async" /></picture></figure>
-          </div>
-          <div class="belong__col">
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/wall-800.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/tote-800.avif 800w, /img/mk/tote-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/tote-800.webp" srcset="/img/mk/tote-800.webp 800w, /img/mk/tote-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/meeting-800.avif 800w, /img/mk/meeting-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/meeting-800.webp" srcset="/img/mk/meeting-800.webp 800w, /img/mk/meeting-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/billboard-800.avif 800w, /img/mk/billboard-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/billboard-800.webp" srcset="/img/mk/billboard-800.webp 800w, /img/mk/billboard-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/box-800.avif 800w, /img/mk/box-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/box-800.webp" srcset="/img/mk/box-800.webp 800w, /img/mk/box-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="572" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/bottle-800.avif 800w, /img/mk/bottle-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/bottle-800.webp" srcset="/img/mk/bottle-800.webp 800w, /img/mk/bottle-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-          </div>
-          <div class="belong__col">
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/jacket-800.avif 800w, /img/mk/jacket-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/jacket-800.webp" srcset="/img/mk/jacket-800.webp 800w, /img/mk/jacket-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/shirt-800.avif 800w, /img/mk/shirt-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/shirt-800.webp" srcset="/img/mk/shirt-800.webp 800w, /img/mk/shirt-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/cases-800.avif 800w, /img/mk/cases-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/cases-800.webp" srcset="/img/mk/cases-800.webp 800w, /img/mk/cases-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="586" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/giftbag-800.avif 800w, /img/mk/giftbag-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/giftbag-800.webp" srcset="/img/mk/giftbag-800.webp 800w, /img/mk/giftbag-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/totem-800.avif 800w, /img/mk/totem-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/totem-800.webp" srcset="/img/mk/totem-800.webp 800w, /img/mk/totem-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
-            <figure class="belong__shot"><picture><source type="image/avif" srcset="/img/mk/drawstring-800.avif 800w, /img/mk/drawstring-1600.avif 1600w" sizes="(max-width: 760px) 46vw, 24vw" /><img src="/img/mk/drawstring-800.webp" srcset="/img/mk/drawstring-800.webp 800w, /img/mk/drawstring-1600.webp 1600w" sizes="(max-width: 760px) 46vw, 24vw" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
-          </div>
+        <!-- the world of the brand: the store's wall, then everything around it as the view pulls back (finale.js) -->
+        <div class="belong__world" aria-hidden="true">
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/billboard-800.avif" /><img src="/img/mk/billboard-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/giftbag-800.avif" /><img src="/img/mk/giftbag-800.webp" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/jacket-800.avif" /><img src="/img/mk/jacket-800.webp" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/box-800.avif" /><img src="/img/mk/box-800.webp" alt="" width="800" height="572" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/totem-800.avif" /><img src="/img/mk/totem-800.webp" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/tote-800.avif" /><img src="/img/mk/tote-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/tablet-800.avif" /><img src="/img/mk/tablet-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile belong__tile--heart"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif" /><img src="/img/mk/wall-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/bottle-800.avif" /><img src="/img/mk/bottle-800.webp" alt="" width="800" height="600" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/drawstring-800.avif" /><img src="/img/mk/drawstring-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/meeting-800.avif" /><img src="/img/mk/meeting-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/cases-800.avif" /><img src="/img/mk/cases-800.webp" alt="" width="800" height="586" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/headphones-800.avif" /><img src="/img/mk/headphones-800.webp" alt="" width="800" height="800" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/phone-800.avif" /><img src="/img/mk/phone-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
+          <figure class="belong__tile"><picture><source type="image/avif" srcset="/img/mk/watch-800.avif" /><img src="/img/mk/watch-800.webp" alt="" width="800" height="534" loading="lazy" decoding="async" /></picture></figure>
         </div>
+        <!-- the store's wall: the picture the view starts inside of, then lands in the middle of the world -->
+        <figure class="belong__lens" aria-hidden="true"><picture><source type="image/avif" srcset="/img/mk/wall-800.avif 800w, /img/mk/wall-1600.avif 1600w" sizes="100vw" /><img src="/img/mk/wall-1600.webp" srcset="/img/mk/wall-800.webp 800w, /img/mk/wall-1600.webp 1600w" sizes="100vw" alt="" width="1600" height="1066" loading="lazy" decoding="async" /></picture></figure>
         <div class="belong__veil" aria-hidden="true"></div>
         <div class="belong__copy">
           <h2 class="belong__title" id="belong-title">Hoje, deixamos de vender produtos. Vendemos <em>pertencimento.</em></h2>
@@ -506,32 +481,39 @@
         </div>
       </div>
       <ul class="sr-only">
+        <li>Parede com o logotipo Upclass</li>
         <li>A campanha “É hora de dar um up” em painéis iluminados</li>
         <li>Sacola de presente Upclass</li>
-        <li>Parede com o logotipo Upclass</li>
         <li>Jaqueta da equipe com a marca</li>
         <li>Caixa de embalagem Upclass</li>
         <li>Totem digital anunciando iPhone</li>
         <li>Ecobag com o logotipo Upclass</li>
-        <li>Camisa do uniforme Upclass</li>
+        <li>iPad e iPhone com a tela da Upclass</li>
         <li>Garrafas com o padrão de raios</li>
         <li>Mochila saco com o padrão de raios</li>
         <li>Sala com a marca Upclass na parede</li>
         <li>Capas de iPhone com o padrão de raios</li>
+        <li>Fones de ouvido, iPhone e Apple Watch com a marca Upclass</li>
       </ul>
     </section>
 
     <section class="closing" id="contato" data-theme="dark" aria-labelledby="closing-title">
       <div class="closing__pin">
+        <!-- the hero's stage, once more: a beam, a horizon, and the promise standing over its own reflection -->
         <div class="closing__bg" aria-hidden="true">
           <img src="/img/bg-glow-1600.webp" srcset="/img/bg-glow-900.webp 900w, /img/bg-glow-1600.webp 1600w, /img/bg-glow-2560.webp 2560w" sizes="100vw" alt="" loading="lazy" decoding="async" />
         </div>
-        <div class="closing__copy">
-          <h2 class="closing__title" id="closing-title">Nada menos do que você <em>espera.</em></h2>
+        <div class="closing__beam" aria-hidden="true"></div>
+        <div class="closing__stage">
+          <h2 class="closing__title" id="closing-title"><span class="closing__line">Nada menos do</span> <span class="closing__line">que você <em>espera.</em></span></h2>
+          <div class="closing__mirror" aria-hidden="true"><p class="closing__title closing__title--echo"><span class="closing__line">Nada menos do</span> <span class="closing__line">que você <em>espera.</em></span></p></div>
+          <div class="closing__horizon" aria-hidden="true"></div>
+        </div>
+        <div class="closing__act">
           <p class="closing__lead">Já garantiu o seu? Não deixe para depois.</p>
           <a class="closing__cta" href="#rodape" data-contact="whatsapp">
-            <span>Falar com a Upclass</span>
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+            <span class="closing__cta-label">Falar com a Upclass</span>
+            <span class="closing__cta-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" /></svg></span>
           </a>
         </div>
       </div>

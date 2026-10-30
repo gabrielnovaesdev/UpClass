@@ -7,6 +7,7 @@ import { canRunGL, evolutionFlat, evolutionStage, filmControls } from './evo-sec
 import { initDetail } from './detail.js';
 import { initFlow, initManifestoSky } from './flow.js';
 import { initMorph } from './morph.js';
+import { initFinale } from './finale.js';
 
 // Rhythm of the page: strong moments (film, details, collection, upgrade, belong) alternate with calm ones
 // (manifesto, name, moments, values) so the motion leads the eye without crowding it. The name, the details, the
@@ -31,8 +32,6 @@ export function initSections({ reduce, lenis, finePointer }) {
 
   // the details pin (see detail.js) is created here; ScrollTrigger.sort() below puts it back in page order
   initDetail({ reduce, finePointer });
-  values();
-  bento();
   moments();
 
   const mm = gsap.matchMedia();
@@ -41,11 +40,9 @@ export function initSections({ reduce, lenis, finePointer }) {
     manifesto(wide); // (here: pinned or not follows the breakpoint, also after a rotation)
     name(wide);
     const undoCollection = collection(wide);
-    const undoUpgrade = upgrade(wide, videos);
-    belong(wide);
-    closing();
+    const undoFinale = initFinale({ wide, finePointer, lenis, videos });
     footerEnter();
-    return () => { undoCollection(); undoUpgrade(); };
+    return () => { undoCollection(); undoFinale(); };
   });
   // pins were created out of page order (the name pin after the details pin): refresh them top to bottom
   ScrollTrigger.sort();
@@ -289,145 +286,6 @@ function momentsCursor({ reduce }) {
     lastX = e.clientX;
     lastY = e.clientY;
   });
-}
-
-/* ---- 07 Promise: tiles rise in a soft cascade; pictures settle inside them (Pangram) */
-function bento() {
-  gsap.from(['.promise__title', '.promise__lead'], {
-    y: 40, autoAlpha: 0, duration: 1.3, ease: 'expo.out', stagger: 0.1,
-    scrollTrigger: { trigger: '.promise__head', start: 'top 80%', once: true },
-  });
-  document.querySelectorAll('.tile').forEach((tile, i) => {
-    gsap.from(tile, {
-      y: 70, autoAlpha: 0, duration: 1.3, ease: 'expo.out', delay: (i % 3) * 0.08,
-      scrollTrigger: { trigger: tile, start: 'top 90%', once: true },
-    });
-    const media = tile.querySelector('.tile__media img, .tile__media video');
-    if (media) {
-      gsap.fromTo(media, { yPercent: -4, scale: 1.16 }, {
-        yPercent: 4, scale: 1.06, ease: 'none',
-        scrollTrigger: { trigger: tile, start: 'top bottom', end: 'bottom top', scrub: true },
-      });
-    }
-  });
-}
-
-/* ---- 08 Upgrade: the film plays inside the bolt, then the bolt opens until you are in it (Farm, KPR) */
-function upgrade(wide, videos) {
-  const pin = document.querySelector('.upgrade__pin');
-  const win = document.querySelector('.upgrade__window');
-  const video = document.querySelector('.upgrade__video');
-  const marquee = document.querySelector('.upgrade__marquee');
-  const copy = document.querySelector('.upgrade__copy');
-  const title = document.querySelector('.upgrade__title');
-  const RATIO = 323.2 / 553.99;
-  // bolt centre (between the two bolts) and a point well inside the upper bolt's body to dive into
-  const CENTER = [0.5, 0.5];
-  const INSIDE = [215 / 323.2, 172 / 553.99];
-  const state = { grow: 0, dive: 0, time: 0 };
-
-  function paint() {
-    const W = pin.clientWidth;
-    const H = pin.clientHeight;
-    const base = H * (wide ? 0.46 : 0.42) * (1 + state.grow * 0.5);
-    const h = base * Math.pow(48, state.dive); // exponential so the zoom feels constant
-    const w = h * RATIO;
-    const k = gsap.parseEase('power2.inOut')(Math.min(1, state.dive * 1.6));
-    const ax = CENTER[0] + (INSIDE[0] - CENTER[0]) * k;
-    const ay = CENTER[1] + (INSIDE[1] - CENTER[1]) * k;
-    win.style.setProperty('--mw', `${w}px`);
-    win.style.setProperty('--mh', `${h}px`);
-    win.style.setProperty('--mx', `${W / 2 - ax * w}px`);
-    win.style.setProperty('--my', `${H / 2 - ay * h}px`);
-  }
-
-  // desktop: the film is scrubbed by the scroll; touch: it simply plays (seeking is costly there)
-  let seekPending = false;
-  function seek() {
-    if (!wide || !video.duration) return;
-    const t = state.time * (video.duration - 0.05);
-    if (seekPending || Math.abs(video.currentTime - t) < 1 / 30) return;
-    seekPending = true;
-    video.currentTime = t;
-  }
-  const onSeeked = () => { seekPending = false; seek(); };
-  video.addEventListener('seeked', onSeeked);
-  if (!wide) video.dataset.autoplay = '';
-  else delete video.dataset.autoplay;
-  video.loop = !wide;
-  // start buffering as soon as the section gets close, so the first scrub frames are ready
-  gsap.timeline({ scrollTrigger: { trigger: pin, start: 'top 200%', once: true, onEnter: () => videos.load(video) } });
-
-  gsap.set(copy.children, { autoAlpha: 0, y: 20 });
-  const tl = gsap.timeline({
-    scrollTrigger: wide
-      ? { trigger: pin, start: 'top top', end: '+=240%', pin: true, scrub: 0.5, onRefresh: paint }
-      : { trigger: pin, start: 'top bottom', end: 'bottom top', scrub: 0.5, onRefresh: paint },
-    onUpdate: () => { paint(); seek(); },
-  });
-  tl.to(state, { grow: 1, ease: 'power1.inOut', duration: 0.55 }, 0)
-    .to(state, { time: 1, ease: 'none', duration: 1 }, 0)
-    .to(state, { dive: 1, ease: 'power2.in', duration: 0.4 }, wide ? 0.5 : 0.45)
-    .to('.upgrade__halo', { scale: 2.4, autoAlpha: 0, ease: 'power1.in', duration: 0.3 }, wide ? 0.5 : 0.45)
-    .fromTo(marquee, { xPercent: 0 }, { xPercent: -33.333, ease: 'none', duration: 1 }, 0)
-    .to(copy.children, { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.12, stagger: 0.04 }, 0.82)
-    .fromTo(title, { scale: 0.94 }, { scale: 1, ease: 'power2.out', duration: 0.18 }, 0.82)
-    .to({}, { duration: 0.1 });
-  paint();
-  // (crossing the breakpoint rebuilds this section: the old scrub must stop seeking the film)
-  return () => video.removeEventListener('seeked', onSeeked);
-}
-
-/* ---- 09 Values: calm — hairlines draw, words settle */
-function values() {
-  const items = document.querySelectorAll('.value');
-  gsap.set('.value__rule', { scaleX: 0 });
-  gsap.set(['.value__num', '.value__title', '.value__text'], { autoAlpha: 0, y: 18 });
-  const tl = gsap.timeline({ scrollTrigger: { trigger: '.values__list', start: 'top 82%', once: true } });
-  items.forEach((item, i) => {
-    tl.to(item.querySelector('.value__rule'), { scaleX: 1, duration: 1.4, ease: 'expo.out' }, i * 0.1)
-      .to(item.querySelectorAll('.value__num, .value__title, .value__text'),
-        { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.07 }, i * 0.1 + 0.2);
-  });
-  gsap.from('.values__title', {
-    yPercent: 30, autoAlpha: 0, duration: 1.4, ease: 'expo.out',
-    scrollTrigger: { trigger: '.values__head', start: 'top 80%', once: true },
-  });
-  gsap.from('.mv', {
-    y: 40, autoAlpha: 0, duration: 1.3, ease: 'expo.out', stagger: 0.12,
-    scrollTrigger: { trigger: '.values__mv', start: 'top 82%', once: true },
-  });
-}
-
-/* ---- 10 Belong: four columns of the brand in use drift at different speeds around the statement */
-function belong(wide) {
-  const pin = document.querySelector('.belong__pin');
-  const cols = document.querySelectorAll('.belong__col');
-  const words = SplitText.create('.belong__title', { type: 'words', wordsClass: 'word' }).words;
-  const tl = gsap.timeline({
-    scrollTrigger: wide
-      ? { trigger: pin, start: 'top top', end: '+=120%', pin: true, scrub: 0.6 }
-      : { trigger: pin, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
-  });
-  const speeds = [-34, -12, -44, -20];
-  cols.forEach((c, i) => tl.fromTo(c, { yPercent: speeds[i] * -0.3 }, { yPercent: speeds[i], ease: 'none', duration: 1 }, 0));
-  tl.fromTo(words, { opacity: 0.15 }, { opacity: 1, ease: 'none', duration: 0.35, stagger: 0.04 }, 0.05)
-    .from('.belong__text', { autoAlpha: 0, y: 20, ease: 'power2.out', duration: 0.2 }, 0.55);
-}
-
-/* ---- 11 Closing: the call to action holds still while the footer card rises over it */
-function closing() {
-  const pin = document.querySelector('.closing__pin');
-  const copy = document.querySelector('.closing__copy');
-  gsap.from(copy.children, {
-    y: 30, autoAlpha: 0, duration: 1.3, ease: 'expo.out', stagger: 0.1,
-    scrollTrigger: { trigger: pin, start: 'top 60%', once: true },
-  });
-  gsap.timeline({
-    scrollTrigger: { trigger: pin, start: 'top top', end: '+=100%', pin: true, scrub: 0.5 },
-  })
-    .to('.closing__bg', { scale: 1.12, ease: 'none', duration: 1 }, 0)
-    .to(copy, { scale: 0.9, yPercent: -8, autoAlpha: 0, ease: 'power1.in', duration: 0.9 }, 0.1);
 }
 
 /* ---- Footer: its lines settle as it rises over the call to action */
