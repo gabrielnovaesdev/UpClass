@@ -270,7 +270,7 @@ export function makeIphone(screenTex, renderer) {
     cam.add(lens);
   });
   // flash (warm frosted), LiDAR (dark) and the microphone
-  const flash = new Mesh(new CylinderGeometry(2.9 * MM, 2.9 * MM, 0.4 * MM, 40), new MeshPhysicalMaterial({ color: 0xf3ead8, roughness: 0.5, transmission: 0.3, clearcoat: 1 }));
+  const flash = new Mesh(new CylinderGeometry(2.9 * MM, 2.9 * MM, 0.4 * MM, 40), new MeshPhysicalMaterial({ color: 0xf3ead8, roughness: 0.5, clearcoat: 1 }) /* (no transmission: one transmissive object makes three draw the whole scene twice, every frame) */);
   flash.rotation.x = Math.PI / 2;
   flash.position.set(0.27 * P, 0.3 * P, top + 0.2 * MM);
   const lidar = new Mesh(new CylinderGeometry(3 * MM, 3 * MM, 0.4 * MM, 40), darkMat);

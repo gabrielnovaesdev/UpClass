@@ -27,7 +27,8 @@ const state = (p) => p.evaluate(() => {
 const d = await open(false);
 await d.evaluate(async () => {
   const top = document.querySelector('.evo').getBoundingClientRect().top + scrollY;
-  const y = top + innerHeight * 2 * 0.86;
+  // (the stage holds 0.8 screen for the mark to burn into its points, then 3.2 screens; the button is live around 60% of those)
+  const y = top + innerHeight * (0.8 + 3.2 * 0.62);
   const from = scrollY;
   for (let k = 1; k <= 30; k++) { window.scrollTo(0, from + ((y - from) * k) / 30); await new Promise((r) => requestAnimationFrame(r)); }
 });

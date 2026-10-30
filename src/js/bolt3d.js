@@ -163,6 +163,50 @@ function reflectionOf(material, uniforms) {
   return m;
 }
 
+// The mark burning away into light (hero only, at the hand-over to the film's bolt of points, see handoff.js): a
+// soft noisy front sweeps it from its tail to its tip — the same order in which the points are born from it — and
+// the edge of what is left glows in the brand's cyan and pink. The UVs of the mark are its raw SVG coordinates
+// (projectArt), so the front is laid out on the logo itself, whatever the pose.
+const dissolveGlsl = /* glsl */ `
+  uniform float uDissolve;
+  varying vec2 vSvg;
+  float upcHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float upcNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(upcHash(i), upcHash(i + vec2(1.0, 0.0)), u.x), mix(upcHash(i + vec2(0.0, 1.0)), upcHash(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
+  // 0 where it burns first (the tail, low on the left), 1 where it burns last (the tip)
+  float upcFront() {
+    vec2 b = vSvg / vec2(${VB_W.toFixed(1)}, ${VB_H.toFixed(2)});
+    float along = b.x * 0.35 + (1.0 - b.y) * 0.65;
+    float n = upcNoise(vSvg * 0.07) * 0.5 + upcNoise(vSvg * 0.19) * 0.32 + upcNoise(vSvg * 0.47) * 0.18;
+    return along * 0.8 + n * 0.2;
+  }
+`;
+function dissolving(material, uniforms) {
+  material.customProgramCacheKey = () => 'upc-dissolve';
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = `varying vec2 vSvg;\n${shader.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n  vSvg = uv;')}`;
+    shader.fragmentShader = `${dissolveGlsl}
+${shader.fragmentShader
+      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+  float upcEdge = upcFront() * 0.5 + 0.12 - uDissolve * 0.62;
+  if (uDissolve > 0.0 && upcEdge < 0.0) discard;`)
+      .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+  if (uDissolve > 0.0) {
+    // a thin seam of light in the brand's colours (cyan at the tip, pink at the tail), brightest right at the edge
+    float glow = 1.0 - smoothstep(0.0, 0.022, upcEdge);
+    float core = 1.0 - smoothstep(0.0, 0.006, upcEdge);
+    vec3 hot = mix(vec3(0.99, 0.22, 0.81), vec3(0.31, 0.9, 1.0), upcFront());
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, hot, glow * 0.85) + hot * core * 0.35;
+  }`)}`;
+  };
+  material.needsUpdate = true;
+}
+
 /**
  * mode 'hero'  — the mark on its stage: it stands over a glossy floor with its reflection, glints as a light circles
  *                it, tilts towards the pointer, and flies wherever `flight()` sends it (hero.js takes it from the hero
@@ -170,11 +214,13 @@ function reflectionOf(material, uniforms) {
  * mode 'intro' — centred and fully art-directed from outside through `rig` (see intro.js).
  */
 export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
-  const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+  // phones: the same mark, without the self-shadowing of the fold, antialiasing and the extra pixels (lite)
+  const lite = !window.matchMedia('(pointer: fine)').matches;
+  const renderer = new WebGLRenderer({ canvas, antialias: !lite, alpha: true, powerPreference: lite ? 'default' : 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lite ? 1.25 : 1.75));
   renderer.toneMapping = NeutralToneMapping;
   renderer.outputColorSpace = SRGBColorSpace;
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = !lite;
   renderer.shadowMap.type = PCFShadowMap; // (PCFSoft is gone from three: asking for it recompiles every shader on the first shadow pass)
 
   const scene = new Scene();
@@ -189,7 +235,7 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
   const ambient = new AmbientLight(0xffffff, 0.04);
   const key = new DirectionalLight(0xffffff, 0.5);
   key.position.set(-4, 4.5, 3.2); // grazing, so every step throws a visible shadow
-  key.castShadow = true;
+  key.castShadow = !lite;
   key.shadow.mapSize.set(2048, 2048);
   key.shadow.radius = 4;
   key.shadow.bias = -0.0004;
@@ -223,6 +269,8 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     refl.matrixAutoUpdate = false;
     scene.add(refl);
   }
+  const dissolveU = { uDissolve: { value: 0 } };
+  if (mode === 'hero') { dissolving(face, dissolveU); dissolving(rim, dissolveU); }
   const mirror = new Matrix4();
   // the mirror floor, ready to break (hero only, see shatter.js)
   const glass = mode === 'hero' ? createShatter({ scene, lite: host.clientWidth < 760 }) : null;
@@ -239,7 +287,7 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     visibleH = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360);
-    const narrow = w < 760;
+    const narrow = window.matchMedia('(max-width: 760px)').matches; // the CSS breakpoint (hero.js uses the same)
     const frac = mode === 'intro' ? introFrac(w, h) : narrow ? 0.32 : 0.46;
     state.frac = frac;
     baseY = mode === 'hero' ? visibleH * (narrow ? 0.07 : -0.035) : 0; // portrait screens lift the hero bolt clear of the copy
@@ -304,6 +352,8 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
     hold(on) {
       if (on === held) return;
       held = on;
+      // a full-screen layer with nothing on it still costs the compositor: take it out while held
+      canvas.style.visibility = held ? 'hidden' : '';
       if (held) stop();
       else if (inView) start();
     },
@@ -335,9 +385,13 @@ export async function createBolt(canvas, svgText, { host, mode = 'hero' }) {
       at(t) { glassT = t; },
       get built() { return glass.built; },
     },
-    /** the resting pose: centre (fraction of the screen) and height (fraction of the screen) at full size. */
+    /** d: 0 → 1, how far the mark has burnt away into light (hero.js, at the hand-over to the film). */
+    dissolve(d) {
+      dissolveU.uDissolve.value = d;
+    },
+    /** the resting pose: centre and height (fractions of the screen) at full size, and the mark's width / height. */
     home() {
-      return { x: 0.5, y: 0.5 - baseY / visibleH, h: state.frac };
+      return { x: 0.5, y: 0.5 - baseY / visibleH, h: state.frac, aspect: VB_W / VB_H };
     },
     pointer(x, y) {
       state.tx = x;

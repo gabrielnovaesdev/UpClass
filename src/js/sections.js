@@ -29,7 +29,6 @@ export function initSections({ reduce, lenis, finePointer }) {
   initManifestoSky({ reduce, finePointer });
   if (reduce) return;
 
-  manifesto();
   // the details pin (see detail.js) is created here; ScrollTrigger.sort() below puts it back in page order
   initDetail({ reduce, finePointer });
   values();
@@ -39,13 +38,14 @@ export function initSections({ reduce, lenis, finePointer }) {
   const mm = gsap.matchMedia();
   mm.add({ wide: '(min-width: 761px)', narrow: '(max-width: 760px)' }, (ctx) => {
     const wide = ctx.conditions.wide;
+    manifesto(wide); // (here: pinned or not follows the breakpoint, also after a rotation)
     name(wide);
     const undoCollection = collection(wide);
-    upgrade(wide, videos);
+    const undoUpgrade = upgrade(wide, videos);
     belong(wide);
     closing();
     footerEnter();
-    return undoCollection;
+    return () => { undoCollection(); undoUpgrade(); };
   });
   // pins were created out of page order (the name pin after the details pin): refresh them top to bottom
   ScrollTrigger.sort();
@@ -54,20 +54,22 @@ export function initSections({ reduce, lenis, finePointer }) {
 /* ---- 01 Manifesto: an inscription the mark comes down to.
    It starts under the pinned hero: while it rises, its inner layer is held to the screen, so when the hero's dark
    ground lifts the manifesto is already there, in the sky of the details (flow.js). With the scroll its three lines
-   rise one by one into place, and the mark, flying down from the hero, lands at the end of the last (hero.js). */
-function manifesto() {
+   rise one by one into place, while the mark, flying down from the hero, passes behind them (hero.js). */
+function manifesto(wide) {
   const inner = document.querySelector('.manifesto__inner');
   const title = document.querySelector('.manifesto__title');
   const lines = title.querySelectorAll('.manifesto__text');
   const note = document.querySelector('.manifesto__note');
   const pillars = document.querySelectorAll('.manifesto__pillars li');
+  const bottom = document.querySelector('.manifesto__bottom');
   const handOver = { trigger: '.manifesto', end: 'top top', invalidateOnRefresh: true };
   gsap.fromTo(inner, { y: () => -window.innerHeight }, { y: 0, ease: 'none', scrollTrigger: { ...handOver, start: 'top bottom', scrub: true } });
   gsap.fromTo(title, { y: () => window.innerHeight * 0.18 }, { y: 0, ease: 'power2.out', scrollTrigger: { ...handOver, start: 'top 85%', scrub: 0.4 } });
-  const narrow = window.matchMedia('(max-width: 760px)').matches;
+  const narrow = !wide;
   gsap.set(lines, { yPercent: 110 });
   gsap.set([note, pillars], { autoAlpha: 0, y: 16 });
-  // the mark lands at LAND of this timeline (hero.js reads it): the last line is in place just before
+  gsap.set(bottom, { '--rule': 0 });
+  // (id: hero.js times the mark's way behind the words by it)
   gsap.timeline({
     scrollTrigger: {
       id: 'manifesto', trigger: '.manifesto__pin', start: 'top top', end: '+=150%', pin: !narrow, scrub: 0.6,
@@ -77,6 +79,8 @@ function manifesto() {
     .to(lines, { yPercent: 0, ease: 'power3.out', duration: 0.5, stagger: 0.16 })
     .to({}, { duration: 0.35 })
     .to(note, { autoAlpha: 0.72, y: 0, duration: 0.4, ease: 'power2.out' })
+    // the rule over the note draws out from the middle with it (the timeline keeps its length: hero.js times by it)
+    .to(bottom, { '--rule': 1, duration: 0.45, ease: 'power2.inOut' }, '<-0.05')
     .to(pillars, { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power2.out', stagger: 0.12 }, '<0.1')
     .to({}, { duration: 0.25 });
 }
@@ -138,7 +142,7 @@ function collection(wide) {
   const st = ScrollTrigger.create({
     trigger: pin,
     start: 'top top',
-    end: () => `+=${travel() * (wide ? 0.85 : 1.25)}`,
+    end: () => { measure(); return `+=${travel() * (wide ? 0.85 : 1.25)}`; }, // (measured first: after a resize the arc is new)
     pin: true,
     invalidateOnRefresh: true,
     onRefresh: measure,
@@ -346,7 +350,8 @@ function upgrade(wide, videos) {
     seekPending = true;
     video.currentTime = t;
   }
-  video.addEventListener('seeked', () => { seekPending = false; seek(); });
+  const onSeeked = () => { seekPending = false; seek(); };
+  video.addEventListener('seeked', onSeeked);
   if (!wide) video.dataset.autoplay = '';
   else delete video.dataset.autoplay;
   video.loop = !wide;
@@ -369,6 +374,8 @@ function upgrade(wide, videos) {
     .fromTo(title, { scale: 0.94 }, { scale: 1, ease: 'power2.out', duration: 0.18 }, 0.82)
     .to({}, { duration: 0.1 });
   paint();
+  // (crossing the breakpoint rebuilds this section: the old scrub must stop seeking the film)
+  return () => video.removeEventListener('seeked', onSeeked);
 }
 
 /* ---- 09 Values: calm — hairlines draw, words settle */

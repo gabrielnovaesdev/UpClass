@@ -17,7 +17,8 @@ export function initFlow({ reduce, finePointer }) {
   const canvas = flow.querySelector('.flow__gl');
 
   const drift = { trigger: flow, start: 'top bottom', end: 'bottom top', scrub: 1.5 };
-  gsap.timeline({ scrollTrigger: drift, defaults: { ease: 'sine.inOut', duration: 1 } })
+  // (on touch screens the glows hold still: three layers wider than the screen, moving, cost more than they give)
+  if (finePointer) gsap.timeline({ scrollTrigger: drift, defaults: { ease: 'sine.inOut', duration: 1 } })
     .to('.flow__glow--warm', { keyframes: { xPercent: [0, -34, -12, 10], yPercent: [0, 12, -6, 8] } }, 0)
     .to('.flow__glow--pink', { keyframes: { xPercent: [0, 26, 48, 20], yPercent: [0, -18, -8, -22] } }, 0)
     .to('.flow__glow--cool', { keyframes: { xPercent: [0, -10, -30, -8], yPercent: [0, -14, 6, -10] } }, 0);
@@ -74,7 +75,7 @@ export function initManifestoSky({ reduce, finePointer }) {
   const sky = section.querySelector('.manifesto__sky');
   const canvas = section.querySelector('.manifesto__gl');
 
-  gsap.timeline({ scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1.5 }, defaults: { ease: 'sine.inOut', duration: 1 } })
+  if (finePointer) gsap.timeline({ scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1.5 }, defaults: { ease: 'sine.inOut', duration: 1 } })
     .to(sky.querySelector('.flow__glow--warm'), { keyframes: { xPercent: [0, -18, 6], yPercent: [0, 8, -4] } }, 0)
     .to(sky.querySelector('.flow__glow--pink'), { keyframes: { xPercent: [0, 20, 34], yPercent: [0, -12, -18] } }, 0)
     .to(sky.querySelector('.flow__glow--cool'), { keyframes: { xPercent: [0, -12, -22], yPercent: [0, -8, 4] } }, 0);

@@ -1,6 +1,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import { handoff } from './handoff.js';
 
 function hasWebGL() {
   try {
@@ -26,8 +27,8 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
 
   // ---- The mirror floor. Its line sits just under the resting mark (the same numbers as the mark's pose in
   //      bolt3d.js); the wordmark is lowered to stand on it, and the floor is painted with its reflection.
-  const floorAt = () => (stage.clientWidth < 760 ? 0.625 : 0.8);
-  let mirrorDirty = true;
+  const narrowNow = () => window.matchMedia('(max-width: 760px)').matches; // the CSS breakpoint, exactly
+  const floorAt = () => (narrowNow() ? 0.625 : 0.8);
   let mirrorPainted = null;
   async function paintMirror() {
     await document.fonts.ready;
@@ -50,13 +51,14 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     g.font = `${fs}px Ibrand`;
     const m = g.measureText('upclass');
     const lineH = parseFloat(cs.lineHeight) || fs * 0.8;
-    const rect = line.getBoundingClientRect();
-    const restY = rect.top - (gsap.getProperty(word, 'y') || 0) - stage.getBoundingClientRect().top;
+    // (by layout offsets, which no transform touches: the hand-over's rise and scale, the intro's zoom, the scroll)
+    const own = new DOMMatrixReadOnly(cs.transform === 'none' ? undefined : cs.transform);
+    const restY = word.offsetTop + line.offsetTop + own.m42;
     const baseline = restY + parseFloat(cs.paddingTop) + (lineH - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent;
     const gap = H * 0.006;
     const sink = (parseFloat(word.style.getPropertyValue('--sink')) || 0) + (floor - gap - baseline);
     word.style.setProperty('--sink', `${sink.toFixed(1)}px`);
-    const textX = rect.left - (gsap.getProperty(word, 'x') || 0) + parseFloat(cs.paddingLeft);
+    const textX = word.offsetLeft + line.offsetLeft + own.m41 + parseFloat(cs.paddingLeft);
 
     // the lacquer: deep indigo under the horizon, down to the page's ink
     const lacquer = g.createLinearGradient(0, 0, 0, h);
@@ -143,11 +145,11 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     horizon.addColorStop(0.94, 'rgba(252, 57, 206, 0)');
     g.fillStyle = horizon;
     g.fillRect(0, 0, W, 1);
-    mirrorDirty = false;
     mirrorPainted?.();
   }
-  // repainted at rest only (the wordmark has to be in its place to be measured)
-  new ResizeObserver(() => { if (window.scrollY < 4) paintMirror(); else mirrorDirty = true; }).observe(stage);
+  // repainted when the stage changes size (once it has settled: a window drag would otherwise repaint every frame)
+  let paintTimer = 0;
+  new ResizeObserver(() => { clearTimeout(paintTimer); paintTimer = setTimeout(paintMirror, 120); }).observe(stage);
 
   if (reduce) {
     return { enter() {} };
@@ -220,7 +222,7 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
   const LIFT = [0.5, 0.93];
   const liftEase = gsap.parseEase('power1.inOut');
   const lift = (p) => liftEase(gsap.utils.clamp(0, 1, (p - LIFT[0]) / (LIFT[1] - LIFT[0])));
-  gsap.timeline({
+  const heroTl = gsap.timeline({
     scrollTrigger: {
       trigger: hero,
       start: 'top top',
@@ -249,99 +251,193 @@ export function initHero({ svgText, reduce, finePointer, nav }) {
     // timeline exactly 1 long, so its time is the scroll progress the nav reads above)
     .to({}, { duration: 1 - LIFT[1] }, LIFT[1]);
 
-  // ---- The flight: the mark rises a little off its mirror, dives through it — the mirror shatters and its shards
-  //      fall (shatter.js) — sinks below the line, then turns back up into the light while the curtain lifts, sweeps
-  //      across the screen and comes down to the end of the manifesto's last line (.manifesto__seat), as large as its
-  //      capitals. From there it stays with the line and leaves with the page. It follows the scroll, softened over
-  //      time, so even a coarse wheel turns into a long, even glide.
-  const seat = document.querySelector('.manifesto__seat');
+  // ---- The flight. The mark rises a little off its mirror and dives through it — the mirror shatters (shatter.js) —
+  //      sinks below the line, turns back up into the light while the curtain lifts, and then comes down the
+  //      manifesto slowly, behind its words as they rise. It keeps going down to meet the film's bolt of light, stops
+  //      exactly over it, and burns away into it: its light becomes the points (handoff.js, evolution.js).
+  //      Every stop on the way is a scroll position taken from the sections themselves, and the path runs through
+  //      them on a curve that is smooth in time (no change of speed at a stop). The scroll it follows is softened
+  //      over time, so even a coarse wheel turns into a long, even glide; and since everything is a function of
+  //      that scroll, stopping freezes it and going back plays it backwards.
   const floorEl = hero.querySelector('.hero__floor');
-  const LAND = 0.46; // where it lands in the manifesto's own timeline (sections.js), just after the last line rose
   const smooth = (a, b, v) => { const t = gsap.utils.clamp(0, 1, (v - a) / (b - a)); return t * t * (3 - 2 * t); };
-  // the way, in screen fractions [x, y, scale], after the resting pose and before the seat
-  const way = (home) => (stage.clientWidth < 760
-    ? [[0.5, home.y - 0.05, 1.03], [0.5, home.y + 0.32, 0.95], [0.6, 0.88, 0.8], [0.3, 0.64, 0.62], [0.66, 0.42, 0.5]]
-    : [[0.5, home.y - 0.06, 1.03], [0.5, home.y + 0.36, 0.95], [0.6, 0.94, 0.8], [0.29, 0.66, 0.64], [0.66, 0.42, 0.52]]);
-  const catmull = (a, b, c, d, t) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
-  function along(pts, u, k) {
-    const n = pts.length - 1;
-    const i = Math.min(n - 1, Math.floor(u * n));
-    const t = u * n - i;
-    const at = (j) => pts[gsap.utils.clamp(0, n, j)][k];
-    return catmull(at(i - 1), at(i), at(i + 1), at(i + 2), t);
+  // the poses after the resting one [x, y, scale] (screen fractions): up off the mirror, through it, under it,
+  // back up into the light, into the top of the manifesto, behind its words, down towards the film
+  const poses = (home, narrow) => (narrow
+    ? [[0.5, home.y - 0.05, 1.03], [0.5, home.y + 0.32, 0.95], [0.6, 0.88, 0.8], [0.3, 0.62, 0.62], [0.64, 0.2, 0.46], [0.5, 0.42, 0.6], [0.42, 0.78, 0.66]]
+    : [[0.5, home.y - 0.06, 1.03], [0.5, home.y + 0.36, 0.95], [0.6, 0.94, 0.8], [0.3, 0.64, 0.64], [0.64, 0.2, 0.44], [0.5, 0.5, 0.6], [0.4, 0.86, 0.72]]);
+  // when it reaches each pose: scroll positions (px), measured on every refresh
+  let knots = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const BURN = 0.75; // screens of scroll it burns away over, once the film's section is in place (within its LEAD)
+  function measureKnots() {
+    const H = window.innerHeight;
+    const heroEnd = heroTl.scrollTrigger?.end ?? H * PIN;
+    const evoST = ScrollTrigger.getById('evo');
+    const evo = document.querySelector('.evo');
+    const evoTop = evoST ? evoST.start : evo.getBoundingClientRect().top + window.scrollY;
+    // on phones the manifesto is not pinned (it scrolls through in about a screen) and the film has no bolt of
+    // light: the mark goes behind the words as they pass the middle and burns away before the film arrives
+    // (lines: where the manifesto's words have risen, about 42% into its own timeline, see sections.js)
+    const mST = ScrollTrigger.getById('manifesto');
+    const lines = mST ? mST.start + (mST.end - mST.start) * 0.42 : heroEnd + 0.5 * H;
+    const k = narrowNow()
+      ? [0, 0.3 * H, 1.0 * H, 1.45 * H, 1.75 * H, lines - 0.3 * H, lines + 0.05 * H, lines + 0.25 * H, lines + 0.38 * H]
+      : [0, 0.35 * H, 1.25 * H, 1.85 * H, 2.35 * H, heroEnd + 0.12 * H, heroEnd + 0.75 * H, evoTop - 0.6 * H, evoTop];
+    for (let i = 1; i < k.length; i++) k[i] = Math.max(k[i], k[i - 1] + 0.1 * H); // always forwards
+    knots = k;
   }
-  let landScroll = 1;
-  const measureLand = () => {
-    const st = ScrollTrigger.getById('manifesto');
-    landScroll = st ? st.start + (st.end - st.start) * LAND : window.innerHeight * 3.2;
+  ScrollTrigger.addEventListener('refresh', measureKnots);
+  // a cubic Hermite curve through the poses, timed by the knots (tangents from the neighbours, divided by time),
+  // resting at both ends
+  function pathAt(pts, T) {
+    const n = pts.length - 1;
+    if (T <= knots[0]) return pts[0];
+    if (T >= knots[n]) return pts[n];
+    let i = 0;
+    while (i < n - 1 && T > knots[i + 1]) i++;
+    const t0 = knots[i];
+    const t1 = knots[i + 1];
+    const h = t1 - t0;
+    const u = (T - t0) / h;
+    const tan = (j) => (j <= 0 || j >= n ? pts[j].map(() => 0) : pts[j].map((v, c) => (pts[j + 1][c] - pts[j - 1][c]) / (knots[j + 1] - knots[j - 1])));
+    const m0 = tan(i);
+    const m1 = tan(i + 1);
+    const u2 = u * u;
+    const u3 = u2 * u;
+    return pts[i].map((p0, c) => (2 * u3 - 3 * u2 + 1) * p0 + (u3 - 2 * u2 + u) * h * m0[c] + (-2 * u3 + 3 * u2) * pts[i + 1][c] + (u3 - u2) * h * m1[c]);
+  }
+  // the film's bolt of light, as a pose (where the mark has to stop); on phones the film has no stage: it simply
+  // burns away low on the screen
+  function meeting(home) {
+    const t = handoff.target?.();
+    if (!t || !t.h) return [0.5, 0.75, 0.5];
+    const VH = mark.clientHeight || window.innerHeight;
+    return [(t.x + t.w / 2) / window.innerWidth, (t.y + t.h / 2) / VH, t.h / (home.h * VH)];
+  }
+  // behind the words: wherever the manifesto's title is on screen (it is pinned on wide screens, it scrolls on phones)
+  function behindWords(p) {
+    const r = title.getBoundingClientRect();
+    return [p[0], gsap.utils.clamp(0.2, 0.8, (r.top + r.height * 0.55) / (mark.clientHeight || window.innerHeight)), p[2]];
+  }
+  const allPoses = (home) => {
+    const ps = poses(home, narrowNow());
+    ps[5] = behindWords(ps[5]);
+    return [[home.x, home.y, 1], ...ps, meeting(home)];
   };
-  ScrollTrigger.addEventListener('refresh', measureLand);
-  const inOut = gsap.parseEase('sine.inOut');
-  let fp = 0; // flight progress as drawn
+
+  let sy = 0; // the scroll as followed
   let parked = false;
   let broken = false;
   let hidden = false;
   // The break belongs to the scroll, not to the clock: it starts where the mark's tip reaches the mirror on its path
-  // (found once per layout, so it never depends on where the mark happens to be later on its way), and its shards
-  // are posed from how far the page has gone since — stop scrolling and they hang in the air, scroll back and they
-  // fly back into the mirror.
+  // (found once per layout), and its shards are posed from how far the page has gone since — stop scrolling and
+  // they hang in the air, scroll back and they fly back into the mirror.
   const BREAK_PER_SCREEN = 1.6; // seconds of the break's clock per screen of scroll
-  let impactFp = 1;
+  let impact = Infinity;
   function findImpact() {
     const home = bolt.home();
-    const pts = [[home.x, home.y, 1], ...way(home), [0.5, 0.4, 0.3]]; // (the seat does not reach this part of the path)
-    for (let f = 0; f <= 0.8; f += 0.0005) {
-      const u = inOut(f);
-      if (along(pts, u, 1) + home.h * along(pts, u, 2) * 0.5 >= floorAt()) { impactFp = f; return; }
+    const pts = allPoses(home);
+    for (let T = 0; T <= knots[3]; T += 2) {
+      const p = pathAt(pts, T);
+      if (p[1] + home.h * p[2] * 0.5 >= floorAt()) { impact = T; return; }
     }
   }
+  ScrollTrigger.addEventListener('refresh', () => { if (bolt?.mirror.built) findImpact(); });
+
+  // the manifesto's words stand in front of the mark: a copy of its title, laid exactly over it, above the mark's
+  // layer (the real title stays underneath for everything else: reading, selecting, the screen reader)
+  const title = document.querySelector('.manifesto__title');
+  const titleTexts = [...title.querySelectorAll('.manifesto__text')];
+  const cover = title.cloneNode(true);
+  cover.removeAttribute('id');
+  cover.setAttribute('aria-hidden', 'true');
+  cover.classList.add('mark__cover');
+  cover.style.visibility = 'hidden';
+  const coverTexts = [...cover.querySelectorAll('.manifesto__text')];
+  let coverOn = false;
+  let titleSeen = false;
+  new IntersectionObserver(([e]) => { titleSeen = e.isIntersecting; }).observe(title);
+  function lay() {
+    // (only once the hero's curtain is up, as drawn: until then the real title is under it)
+    const on = titleSeen && heroTl.progress() >= 0.93;
+    if (on !== coverOn) { coverOn = on; cover.style.visibility = on ? '' : 'hidden'; }
+    if (!on) return;
+    const r = title.getBoundingClientRect();
+    cover.style.width = `${r.width}px`;
+    cover.style.transform = `translate3d(${r.left.toFixed(1)}px, ${r.top.toFixed(1)}px, 0)`;
+    titleTexts.forEach((el, i) => { coverTexts[i].style.transform = el.style.transform; });
+  }
+
+  let restAt = -1; // the scroll the frame was last computed for, while resting at either end of the way
+  let shardsStale = false; // the floor was repainted while broken: recut the shards once it is whole again
   function fly(time, deltaMs) {
     if (!bolt) return;
     const dt = Math.min(0.05, deltaMs / 1000);
-    // the drawn progress glides after the scroll (time based, the same at any frame rate)
-    const target = gsap.utils.clamp(0, 1, window.scrollY / landScroll);
-    fp += (target - fp) * (1 - Math.exp(-dt * 3.4));
-    if (Math.abs(target - fp) < 0.00005) fp = target;
-    if (fp < 0.0005) {
+    const H = window.innerHeight;
+    const VH = mark.clientHeight || H;
+    // the followed scroll glides after the real one (time based, the same at any frame rate)
+    sy += (window.scrollY - sy) * (1 - Math.exp(-dt * 3.4));
+    if (Math.abs(window.scrollY - sy) < 0.3) sy = window.scrollY;
+    const end = knots[knots.length - 1];
+    const resting = sy === window.scrollY && (sy < 0.5 || parked);
+    if (resting && restAt === sy) { if (coverOn) lay(); return; }
+    restAt = resting ? sy : -1;
+    if (sy < 0.5) {
       bolt.flight(null);
-      if (mirrorDirty && window.scrollY < 4) paintMirror();
     } else {
       const home = bolt.home();
-      const r = seat.getBoundingClientRect();
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      const end = [(r.left + r.width / 2) / W, (r.top + r.height / 2) / H, r.height / (home.h * H)];
-      const pts = [[home.x, home.y, 1], ...way(home), end];
-      const u = inOut(fp);
-      const x = along(pts, u, 0);
-      const y = along(pts, u, 1);
-      const sc = along(pts, u, 2);
-      const ahead = along(pts, Math.min(1, u + 0.01), 0);
+      const pts = allPoses(home);
+      const [x, y, sc] = pathAt(pts, sy);
+      const ahead = pathAt(pts, sy + H * 0.03)[0];
+      const settle = 1 - smooth(knots[7], end, sy); // facing you, still, as it meets the bolt of light
+      const spin = gsap.parseEase('sine.inOut')(gsap.utils.clamp(0, 1, sy / end));
       bolt.flight({
         x, y, s: sc,
-        turn: u * Math.PI * 4, // two full turns on the way, facing you again as it lands
-        bank: gsap.utils.clamp(-0.4, 0.4, -(ahead - x) * 12),
-        idle: 1 - 0.75 * smooth(0, 0.5, fp),
-        refl: fp >= impactFp ? 0 : 1,
+        turn: spin * Math.PI * 6, // three full turns over the whole way: facing you again at the meeting
+        bank: gsap.utils.clamp(-0.4, 0.4, -(ahead - x) * 12) * settle,
+        idle: (1 - 0.7 * smooth(0, knots[3], sy)) * settle,
+        refl: sy >= impact ? 0 : 1,
       });
-      // once it has left the top of the screen with the page, nothing more to draw
-      const away = fp > 0.985 && r.bottom < -40;
-      if (away !== parked) { parked = away; bolt.hold(away); }
+      // the meeting: the mark burns away over its own box, and the points are born from it there
+      const burn = gsap.utils.clamp(0, 1, (sy - end) / ((narrowNow() ? 0.45 : BURN) * H));
+      const h = home.h * VH * sc;
+      const w = h * home.aspect;
+      handoff.from = { x: x * window.innerWidth - w / 2, y: y * VH - h / 2, w, h };
+      handoff.gather = burn;
+      bolt.dissolve(burn);
+      // burnt away: one last (empty) frame, then nothing more to draw until the page comes back
+      const gone = burn >= 1;
+      if (gone !== parked) {
+        parked = gone;
+        if (gone) bolt.rig.render();
+        bolt.hold(gone);
+      }
     }
-    broken = bolt.mirror.built && fp >= impactFp;
-    bolt.mirror.at(broken ? ((fp - impactFp) * landScroll * BREAK_PER_SCREEN) / window.innerHeight : 0);
+    broken = bolt.mirror.built && sy >= impact;
+    if (shardsStale && !broken) { shardsStale = false; mirrorPainted(); }
+    bolt.mirror.at(broken ? ((sy - impact) * BREAK_PER_SCREEN) / H : 0);
     // once broken, the painted floor is gone: the shards are the floor
     if (broken !== hidden) { hidden = broken; floorEl.style.visibility = broken ? 'hidden' : ''; }
+    lay();
   }
 
   boltReady.then((b) => {
     if (!b?.home) return;
-    document.documentElement.classList.add('flight'); // the seat's flat mark gives way to the flying one
+    handoff.active = true; // the film's points will be born from the mark
+    document.body.append(cover);
+    measureKnots();
+    sy = window.scrollY; // a reload half way down starts there, instead of flying the whole way in a blink
     // the shards are cut from the painted floor, and recut whenever it is repainted (while the mirror is whole)
-    mirrorPainted = () => { if (!broken) { b.mirror.build(mirror, floorAt(), 0.5); findImpact(); } };
-    if (!mirrorDirty) mirrorPainted();
+    mirrorPainted = () => {
+      if (broken) { shardsStale = true; return; }
+      b.mirror.build(mirror, floorAt(), 0.5);
+      findImpact();
+      restAt = -1;
+    };
+    if (mirror.width > 300) mirrorPainted(); // (painted already: cut it now)
     gsap.ticker.add(fly);
   });
+  ScrollTrigger.addEventListener('refresh', () => { restAt = -1; });
 
   // ---- Entrance (after the intro, or immediately on return visits)
   function enter() {

@@ -76,10 +76,24 @@ function loadImage(src) {
 }
 
 
+// On phones (lite) the stages keep their look but drop what costs the most per pixel: the second specular layer
+// (clearcoat), the thin film (iridescence), sheen and brushed metal (anisotropy). With antialiasing off and the
+// pixel ratio held at 1.25 that is several times less fragment work, on screens where the difference does not show.
+export function lighten(root) {
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+      if (!m.isMeshPhysicalMaterial) return;
+      Object.assign(m, { clearcoat: 0, iridescence: 0, sheen: 0, anisotropy: 0, transmission: 0 });
+      m.needsUpdate = true;
+    });
+  });
+}
+
 // renderer, camera, mist and the brand's lights: what both stages share
 function baseStage(canvas, host, lite) {
-  const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lite ? 1.5 : 1.75));
+  const renderer = new WebGLRenderer({ canvas, antialias: !lite, alpha: true, powerPreference: lite ? 'default' : 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lite ? 1.25 : 1.75));
   renderer.toneMapping = NeutralToneMapping;
   renderer.outputColorSpace = SRGBColorSpace;
 
@@ -150,6 +164,7 @@ export async function createDetailStage(canvas, host, svgText, { lite = false } 
     return holder;
   });
   softenSilhouettes(scene);
+  if (lite) lighten(scene);
   // compile every material now, off the main thread where the browser allows it: otherwise the first frame an
   // object appears in stalls the page for seconds, right in the middle of its flight
   await (renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve(renderer.compile(scene, camera)));
@@ -252,6 +267,7 @@ export function createField(canvas, host, svgText, { lite = false, count = lite 
     scene.add(m);
     pieces.push(m);
   }
+  if (lite) lighten(scene);
 
   return {
     resize: base.resize,

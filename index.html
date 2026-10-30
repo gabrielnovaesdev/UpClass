@@ -9,8 +9,8 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preload" href="/fonts/ibrand-regular.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="/fonts/gotham-book.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="/img/bolt-tex-1600.webp" as="image" type="image/webp" />
-  <link rel="preload" href="/img/bolt-normal-1600.webp" as="image" type="image/webp" />
+  <link rel="preload" href="/img/bolt-tex-1600.webp" as="image" type="image/webp" fetchpriority="low" />
+  <link rel="preload" href="/img/bolt-normal-1600.webp" as="image" type="image/webp" fetchpriority="low" />
   <script>
     // Decide before first paint whether the intro will run, so the hero never flashes.
     (function () {
@@ -140,11 +140,11 @@
             <div class="flow__glow flow__glow--cool"></div>
             <canvas class="manifesto__gl"></canvas>
           </div>
-          <!-- three lines, centred like an inscription; the mark lands at the end of the last one (hero.js) -->
+          <!-- three lines, centred like an inscription; the mark comes down behind them (hero.js) -->
           <h2 class="manifesto__title" id="manifesto-title">
             <span class="manifesto__line manifesto__line--lead"><span class="manifesto__text">Não vendemos um aparelho.</span></span>
             <span class="manifesto__line"><span class="manifesto__text">Vendemos o que ele</span></span>
-            <span class="manifesto__line"><span class="manifesto__text">representa<span class="manifesto__seat" aria-hidden="true"><img src="/img/bolt-art-700.webp" alt="" width="409" height="701" loading="lazy" decoding="async" /></span></span></span>
+            <span class="manifesto__line"><span class="manifesto__text">representa</span></span>
           </h2>
           <div class="manifesto__bottom">
             <p class="manifesto__note">Cada produto é um símbolo silencioso de evolução. Para alguns, é a porta de entrada. Para outros, uma atualização de imagem. Para todos, um passo natural — como se sempre tivesse feito parte da vida.</p>
