@@ -1,5 +1,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { handoff } from './handoff.js';
+import { setNavTheme } from './nav.js';
 
 const clamp01 = gsap.utils.clamp(0, 1);
 const range = (t, a, b) => clamp01((t - a) / (b - a));
@@ -8,15 +10,20 @@ const out = gsap.parseEase('power3.out');
 const lerp = (a, b, k) => a + (b - a) * k;
 
 // WebGL only where it pays off: wide screens with a capable GPU and motion allowed.
+let glOk = null;
 export function canRunGL() {
-  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return false;
-  if (navigator.deviceMemory && navigator.deviceMemory < 4) return false;
+  if (glOk !== null) return glOk; // (probed once: every probe is a whole WebGL context)
+  glOk = false;
+  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return glOk;
+  if (navigator.deviceMemory && navigator.deviceMemory < 4) return glOk;
   try {
-    const c = document.createElement('canvas');
-    return !!c.getContext('webgl2');
+    const gl = document.createElement('canvas').getContext('webgl2');
+    glOk = !!gl;
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
   } catch (e) {
-    return false;
+    glOk = false;
   }
+  return glOk;
 }
 
 /* ---- controls (all layouts): the preview loop's pause button, PLAY ▶ REEL and the film dialog with its chapters */
@@ -97,6 +104,9 @@ export function filmControls({ lenis }) {
       when the pin lets go the page is simply in the mist. */
 const PIN = 3.2; // screens of scroll the stage holds for
 const LIFT = [0.76, 0.98]; // the part of it where the dark lifts away
+// before act 1, the stage holds still for this many screens while the mark coming down from the hero burns away
+// into its points (hero.js, handoff.js): they are born once the section is fully in place, never on the way in
+const LEAD = 0.8;
 
 export async function evolutionStage({ videos }) {
   const section = document.querySelector('.evo');
@@ -112,15 +122,16 @@ export async function evolutionStage({ videos }) {
   }));
 
   section.classList.add('is-gl');
-  pin.append(reel); // on the stage the label rides the travelling panel, not the hidden player
   const poster = new Image();
   poster.src = video.getAttribute('poster');
   await poster.decode().catch(() => {});
   const { createEvolution } = await import('./evolution.js');
   const gl = await createEvolution({ host: pin, canvas: section.querySelector('.evo__gl'), video, poster });
+  // on the stage the label rides the travelling panel, not the hidden player (moved only once the stage exists:
+  // if it fails, the label stays with the plain player)
+  pin.append(reel);
   const s = gl.state;
   const ambient = section.querySelector('.evo__ambient');
-  const nav = document.querySelector('.nav');
 
   // The light flow slides under this pin's last stretch: from the start of the lift on, it fills the screen beneath
   // the stage. Its first section is pushed down by the same amount, so nothing after it moves.
@@ -134,12 +145,18 @@ export async function evolutionStage({ videos }) {
   setOverlap();
   ScrollTrigger.addEventListener('refreshInit', setOverlap);
 
-  // the points gather into the bolt the first time the stage comes into view
+  // the points gather into the bolt the first time the stage comes into view — unless the mark is flying down to
+  // meet it (handoff.js): then they are born from the mark as it burns away, with the scroll
   new IntersectionObserver(([e], io) => {
-    if (!e.isIntersecting) return;
+    if (!e.isIntersecting || handoff.active) return;
     io.disconnect();
     gsap.to(s, { gather: 1, duration: 2.4, ease: 'power2.out' });
   }, { threshold: 0.25 }).observe(pin);
+  // where the mark has to stop: the bolt of light, on screen
+  handoff.target = () => {
+    const p = pin.getBoundingClientRect();
+    return { x: p.left + s.bolt.x, y: p.top + s.bolt.y, w: s.bolt.w, h: s.bolt.h };
+  };
 
   // the film starts buffering as the section approaches, so the panel plays real frames on arrival
   gsap.timeline({ scrollTrigger: { trigger: section, start: 'top 180%', once: true, onEnter: () => videos.load(video) } });
@@ -181,6 +198,14 @@ export async function evolutionStage({ videos }) {
 
   let lastTheme = '';
   function paint() {
+    if (handoff.active) {
+      s.gather = handoff.gather;
+      const f = handoff.from;
+      if (f) {
+        const p = pin.getBoundingClientRect();
+        s.from = { x: f.x - p.left, y: f.y - p.top, w: f.w, h: f.h };
+      }
+    }
     pointer.sx += (pointer.x - pointer.sx) * 0.08;
     pointer.sy += (pointer.y - pointer.sy) * 0.08;
     speed *= 0.9;
@@ -213,9 +238,9 @@ export async function evolutionStage({ videos }) {
     intro.style.transform = `translate3d(0, ${-fadeIntro * 8}vh, 0)`;
     // the native film takes over on landing and leaves rising out of the frame. Before that it is already drawn,
     // just invisibly (opacity 0 would skip it, and its first real frame would stall the scroll at the hand-over)
-    const handoff = range(t, 0.5, 0.56) * (t < 0.96 ? 1 : 0);
-    player.style.opacity = String(t < 0.96 ? Math.max(0.002, handoff) : 0);
-    player.inert = handoff < 0.5;
+    const takeover = range(t, 0.5, 0.56) * (t < 0.96 ? 1 : 0);
+    player.style.opacity = String(t < 0.96 ? Math.max(0.002, takeover) : 0);
+    player.inert = takeover < 0.5;
     player.style.transform = ex > 0 ? `translate(-50%, calc(-50% - ${rise.toFixed(1)}px)) scale(${sc.toFixed(4)})` : '';
 
     // the dark ground and its glow lift away; the capsule turns light once the edge has passed under it
@@ -225,10 +250,10 @@ export async function evolutionStage({ videos }) {
     // (held every frame of the lift: the flow's own trigger fires as it slides under, while the top is still dark)
     if (t > 0.7 && t < 1) {
       const theme = lift > 0.75 ? 'light' : 'dark';
-      if (nav.dataset.theme !== theme) nav.dataset.theme = theme;
+      setNavTheme(theme); // (every frame, through the nav: an open menu keeps its own tone)
       lastTheme = theme;
     } else if (lastTheme && t <= 0.7) {
-      nav.dataset.theme = 'dark';
+      setNavTheme('dark');
       lastTheme = '';
     }
 
@@ -250,9 +275,10 @@ export async function evolutionStage({ videos }) {
 
   gsap.timeline({
     scrollTrigger: {
+      id: 'evo',
       trigger: pin,
       start: 'top top',
-      end: () => `+=${PIN * window.innerHeight}`,
+      end: () => `+=${(PIN + LEAD) * window.innerHeight}`,
       pin: true,
       scrub: 0.8,
       invalidateOnRefresh: true,
@@ -261,7 +287,7 @@ export async function evolutionStage({ videos }) {
     },
   }).to({ v: 0 }, {
     v: 1, ease: 'none', duration: 1,
-    onUpdate() { t = this.targets()[0].v; },
+    onUpdate() { t = clamp01((this.targets()[0].v * (PIN + LEAD) - LEAD) / PIN); },
   });
 
   // DOM and uniform updates run only while the stage is on screen

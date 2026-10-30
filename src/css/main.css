@@ -52,7 +52,7 @@
   background-color: var(--mist);
   background-image:
     /* fine grain keeps the soft glows from banding into rings */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .6 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("/img/grain.webp"),
     radial-gradient(46% 56% at 62% 40%, rgba(255, 224, 237, 0.8), rgba(255, 224, 237, 0.34) 45%, rgba(255, 224, 237, 0) 100%),
     radial-gradient(56% 62% at 10% 88%, rgba(252, 57, 206, 0.05), rgba(252, 57, 206, 0.02) 50%, rgba(252, 57, 206, 0) 100%),
     radial-gradient(56% 62% at 94% 96%, rgba(128, 255, 255, 0.15), rgba(128, 255, 255, 0.06) 50%, rgba(128, 255, 255, 0) 100%);
@@ -69,7 +69,7 @@
 }
 .flow__sky::after {
   content: ""; position: absolute; inset: 0; z-index: 1;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .6 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("/img/grain.webp");
 }
 /* each glow is the matching layer of .atmo, as an element of its own so it can move */
 .flow__glow { position: absolute; will-change: transform; }
@@ -92,7 +92,10 @@
 *::before,
 *::after { box-sizing: border-box; }
 
-html { background: var(--ink); -webkit-text-size-adjust: 100%; }
+html { background: var(--ink); -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; } /* (the menu hides the scrollbar: the page must not get wider and re-measure everything) */
+/* touch screens scroll natively (no Lenis to stop): hold the page still under the intro and the open menu */
+html.has-intro, html.menu-open { overflow: hidden; }
+.menu { overscroll-behavior: contain; }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
@@ -342,6 +345,8 @@ img { display: block; max-width: 100%; }
 .mark { position: fixed; left: 0; top: 0; z-index: 40; width: 100%; height: 100svh; pointer-events: none; }
 .mark__gl { display: block; width: 100%; height: 100%; opacity: 0; }
 .no-webgl .mark, .reduce-motion .mark { display: none; }
+/* the manifesto's words in front of the flying mark: a copy of its title laid exactly over the real one (hero.js) */
+.mark__cover { position: fixed; left: 0; top: 0; z-index: 41; margin: 0; color: var(--ink); pointer-events: none; user-select: none; }
 
 /* The stage it stands on: a beam of light from above, a lacquered floor under a lit horizon, and the pool of colour
    the mark throws on it. --floor (hero.js) is the line just under the resting mark */
@@ -361,7 +366,7 @@ img { display: block; max-width: 100%; }
 }
 /* the mirror itself (hero.js paints it, and hides it while its shards are in the air, see shatter.js) */
 .hero__mirror { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.hero__fallback { position: relative; height: 40vh; width: auto; opacity: 0; }
+.hero__fallback { position: relative; height: 40svh; width: auto; opacity: 0; }
 .no-webgl .hero__fallback, .reduce-motion .hero__fallback { opacity: 1; }
 
 .hero__content {
@@ -392,7 +397,7 @@ img { display: block; max-width: 100%; }
   .hero__word-line { font-size: 28vw; transform: translateY(calc(-2vh + var(--sink, 0px))); }
   .hero__set { --floor: 62.5%; }
   .hero__halo { top: 43%; }
-  .hero__fallback { height: 34vh; }
+  .hero__fallback { height: 34svh; }
 }
 /* the narrowest phones: the side columns take what they need, so "Fale conosco" never runs into the wordmark */
 @media (max-width: 360px) {

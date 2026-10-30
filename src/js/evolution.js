@@ -84,6 +84,8 @@ const pointsVert = /* glsl */ `
   uniform vec2 uPointer;
   uniform float uTime;
   uniform float uGather;
+  uniform vec4 uFromRect;  // the flying mark's box in px, when the points are born from it (handoff.js)
+  uniform float uFromOn;
   uniform float uFlow;
   uniform float uExit;
   uniform float uPx;       // device pixels per css pixel
@@ -104,7 +106,13 @@ const pointsVert = /* glsl */ `
     // gather: from a loose cloud into the bolt, each point on its own beat
     float g = ease(clamp((uGather - aSeed.x * 0.5) / 0.5, 0.0, 1.0));
     vec2 scattered = aAway * uRes + (aBolt - 0.5) * uBoltRect.zw * 2.2;
+    // ... or, when the mark flew down to meet the bolt, from the very spot of the mark's surface it stands for: it
+    // leaves as the mark burns there, puffs out a little like a spark, and settles into its place in the light
+    vec2 onMark = uFromRect.xy + aBolt * uFromRect.zw;
+    scattered = mix(scattered, onMark, uFromOn);
     vec2 pos = mix(scattered, bolt, g);
+    vec2 puff = ((aBolt - 0.5) * uFromRect.zw * 0.42 + vec2(aSeed.y - 0.5, aSeed.z - 0.5) * uFromRect.w * 0.16) * (0.4 + aSeed.w);
+    pos += puff * sin(g * 3.14159265) * uFromOn;
 
     // stream: along a curve that swings out and dips before reaching its spot in the panel (or its dust spot)
     float f = clamp((uFlow - aSeed.x * 0.5) / 0.5, 0.0, 1.0);
@@ -240,6 +248,8 @@ export async function createEvolution({ host, canvas, video, poster, lite = fals
     uPointer: { value: [-9999, -9999] },
     uTime: { value: 0 },
     uGather: { value: 0 },
+    uFromRect: { value: [0, 0, 1, 1] },
+    uFromOn: { value: 0 },
     uFlow: { value: 0 },
     uExit: { value: 0 },
     uPx: { value: dpr },
@@ -265,6 +275,7 @@ export async function createEvolution({ host, canvas, video, poster, lite = fals
     bolt: { x: 0, y: 0, w: 10, h: 10 }, // the bolt's box in host pixels
     tiltX: 0, tiltY: 0, bend: 0, curl: 0, wipe: 0, alpha: 1,
     gather: 0, flow: 0, exit: 0,
+    from: null, // the flying mark's box in host pixels, while the points are born from it (evo-section.js)
     pointer: [-9999, -9999],
     aspect,
   };
@@ -300,6 +311,8 @@ export async function createEvolution({ host, canvas, video, poster, lite = fals
     pu.uPointer.value = state.pointer;
     pu.uTime.value = time;
     pu.uGather.value = state.gather;
+    if (state.from) pu.uFromRect.value = [state.from.x, state.from.y, state.from.w, state.from.h];
+    pu.uFromOn.value = state.from ? 1 : 0;
     pu.uFlow.value = state.flow;
     pu.uExit.value = state.exit;
     points.visible = state.gather > 0 && state.exit < 1;

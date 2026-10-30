@@ -37,13 +37,13 @@
 .manifesto__sky { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 .manifesto__sky::after {
   content: ""; position: absolute; inset: 0; z-index: 1;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .6 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("/img/grain.webp");
 }
 .manifesto__gl { display: none; position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; }
 .manifesto.is-gl .manifesto__gl { display: block; }
 
 /* The sentence as an inscription: centred, in the brand's own letters. The first line is said quietly, the answer
-   follows large; the mark itself flies down from the hero and lands at the end of it, where the seat waits (hero.js) */
+   follows large; the mark flies down from the hero and passes behind it on its way to the film (hero.js) */
 .manifesto__title {
   align-self: center; display: grid; justify-items: center; text-align: center;
   font-family: var(--display); font-weight: 400;
@@ -61,14 +61,13 @@
 .manifesto__line--lead .manifesto__text { display: inline-flex; align-items: center; gap: 0.9em; }
 .manifesto__line--lead .manifesto__text::before,
 .manifesto__line--lead .manifesto__text::after { content: ""; width: 2.2em; height: 1px; background: var(--hair); }
-/* the seat: as tall as the capitals, a breath after the full stop. Without the flight it holds the flat mark */
-.manifesto__seat {
-  position: relative; display: inline-block; vertical-align: -0.06em;
-  width: 0.56em; height: 0.96em; margin-left: 0.16em;
+.manifesto__bottom { position: relative; display: grid; grid-template-columns: 1fr 1.25fr; gap: var(--gutter); align-items: end; padding-top: 3.2vh; }
+/* the rule over the note: drawn out from the middle with the note itself (sections.js), so it never reads as the
+   hero's mirror line carrying on before there is anything under it */
+.manifesto__bottom::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--hair);
+  transform: scaleX(var(--rule, 1));
 }
-.manifesto__seat img { width: 100%; height: 100%; object-fit: contain; }
-.flight .manifesto__seat img { visibility: hidden; }
-.manifesto__bottom { display: grid; grid-template-columns: 1fr 1.25fr; gap: var(--gutter); align-items: end; padding-top: 3.2vh; border-top: 1px solid var(--hair); }
 .manifesto__note { max-width: 30em; font-size: clamp(15px, 1.1vw, 19px); line-height: 1.55; color: var(--mist-ink); }
 .manifesto__pillars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
 .manifesto__pillars li { display: grid; gap: 10px; }
@@ -289,7 +288,7 @@
   font-size: clamp(44px, 7.4vw, 136px); line-height: 0.9; letter-spacing: -0.03em;
 }
 .detail__text { max-width: 25em; font-size: 15px; line-height: 1.55; color: var(--mist-ink); }
-.detail__fallback { width: auto; height: 38vh; margin: 9vh auto 0; }
+.detail__fallback { width: auto; height: 38svh; margin: 9svh auto 0; }
 
 .detail.is-live .detail__pin { height: 100svh; padding: 0; perspective: 900px; perspective-origin: 50% 50%; }
 .detail.is-live .detail__gl { display: block; position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -680,4 +679,20 @@
   .upgrade__window { -webkit-mask: none; mask: none; }
   .moments__list .moment:is(:hover, :focus-visible) :is(.moment__title, .moment__text) { transform: none; }
   .moment::after, .moments__shot img { transition: none; }
+}
+
+/* ---------------------------------------------------------------- Phones and tablets (touch): the same look, cheaper
+   What costs most on a phone's GPU is what has to be recomputed under things that move: the frosted glass of the
+   cards (re-blurred behind each moving card), the nav's glass over the moving 3D, the hero grain blended over the
+   whole stage, and large blur filters. The gradients those blurs soften are already soft, and the grain is too fine
+   to see on a small, dense screen. */
+@media (pointer: coarse) {
+  .card__inner {
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.14) 60%, rgba(255, 255, 255, 0.26));
+  }
+  .nav__capsule { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .hero__stage::before { display: none; }
+  .hero__halo, .upgrade__halo { filter: none; }
+  .flow__glow { will-change: auto; } /* (they hold still here, see flow.js) */
 }

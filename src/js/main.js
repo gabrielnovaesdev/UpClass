@@ -42,7 +42,7 @@ const ready = Promise.race([
   new Promise((r) => setTimeout(r, 4000)),
 ]);
 
-const nav = initNav({ lenis });
+const nav = initNav({ lenis, reduce });
 const hero = initHero({ svgText: boltSvg, reduce, finePointer, nav });
 initSections({ reduce, lenis, finePointer });
 
@@ -50,7 +50,14 @@ initSections({ reduce, lenis, finePointer });
   if (root.classList.contains('has-intro')) {
     lenis?.stop();
     window.scrollTo(0, 0);
-    await playIntro({ paths: boltPaths, svgText: boltSvg, ready, onReveal: () => hero.enter() });
+    let revealed = false;
+    try {
+      await playIntro({ paths: boltPaths, svgText: boltSvg, ready, onReveal: () => { revealed = true; hero.enter(); } });
+    } catch (e) {
+      // the intro could not play (a chunk failed to load): never leave the page behind its veil
+      document.querySelector('.intro')?.remove();
+      if (!revealed) hero.enter();
+    }
     try { sessionStorage.setItem('upc-intro', '1'); } catch (e) {}
     root.classList.remove('has-intro');
     lenis?.start();
