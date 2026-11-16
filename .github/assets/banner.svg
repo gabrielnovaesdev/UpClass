@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="Upclass: iPhones e acessórios com procedência garantida">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#000229"/><stop offset="1" stop-color="#02007c"/></linearGradient>
+    <radialGradient id="a" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fc39ce" stop-opacity="0.55"/><stop offset="1" stop-color="#fc39ce" stop-opacity="0"/></radialGradient>
+    <radialGradient id="b" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#80ffff" stop-opacity="0.45"/><stop offset="1" stop-color="#80ffff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <ellipse cx="1060" cy="70" rx="420" ry="260" fill="url(#a)"/>
+  <ellipse cx="1180" cy="300" rx="380" ry="200" fill="url(#b)"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.07"><circle cx="1090" cy="160" r="120"/><circle cx="1090" cy="160" r="190"/><circle cx="1090" cy="160" r="270"/></g>
+  <text x="80" y="140" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="92" font-weight="700" letter-spacing="-3" fill="#ffffff">Upclass</text>
+  <text x="82" y="190" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="26" fill="#c9cbf0">iPhones e acessórios com procedência garantida</text>
+  <rect x="80" y="236" width="122" height="38" rx="19" fill="#ffffff22"/><text x="141.0" y="260" text-anchor="middle" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="600" fill="#ffffff" letter-spacing="0.3">Three.js</text><rect x="214" y="236" width="78" height="38" rx="19" fill="#ffffff22"/><text x="253.0" y="260" text-anchor="middle" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="600" fill="#ffffff" letter-spacing="0.3">GSAP</text><rect x="304" y="236" width="89" height="38" rx="19" fill="#ffffff22"/><text x="348.5" y="260" text-anchor="middle" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="600" fill="#ffffff" letter-spacing="0.3">Lenis</text><rect x="405" y="236" width="78" height="38" rx="19" fill="#ffffff22"/><text x="444.0" y="260" text-anchor="middle" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="600" fill="#ffffff" letter-spacing="0.3">Vite</text>
+</svg>
