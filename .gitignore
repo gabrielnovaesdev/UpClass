@@ -5,3 +5,13 @@ Thumbs.db
 *.log
 .vite/
 qa-out/
+
+# Ferramentas locais (não fazem parte do projeto)
+.claude/
+.agents/
+.impeccable/
+.claude-flow/
+.swarm/
+CLAUDE.md
+AGENTS.md
+.mcp.json
